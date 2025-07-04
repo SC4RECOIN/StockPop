@@ -30,17 +30,17 @@ console.clear();
 if (hasDevFlag) {
   console.log('\n');
   console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
-  console.log('🟢                                                     🟢');
-  console.log('🟢              STARTING IN DEV MODE                   🟢');
-  console.log('🟢                                                     🟢');
+  console.log('🟢                                                        🟢');
+  console.log('🟢              STARTING IN DEV MODE                      🟢');
+  console.log('🟢                                                        🟢');
   console.log('🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢🟢');
   console.log('\n');
 } else {
   console.log('\n');
   console.log('▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️');
-  console.log('▶️                                                     ▶️');
-  console.log('▶️            STARTING IN STANDARD MODE                ▶️');
-  console.log('▶️                                                     ▶️');
+  console.log('▶️                                                        ▶️');
+  console.log('▶️            STARTING IN STANDARD MODE                   ▶️');
+  console.log('▶️                                                        ▶️');
   console.log('▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️▶️');
   console.log('\n');
 }
