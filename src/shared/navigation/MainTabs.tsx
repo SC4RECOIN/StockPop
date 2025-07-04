@@ -13,7 +13,6 @@ import AnimatedTabIcon from './AnimatedTabIcon';
 import FeedScreen from '@/screens/sample-ui/Threads/feed-screen/FeedScreen';
 import SwapScreen from '@/modules/swap/screens/SwapScreen';
 
-import { ChatListScreen } from '@/screens/sample-ui/chat';
 import ModuleScreen from '@/screens/Common/launch-modules-screen/LaunchModules';
 
 // Create context for scroll-based UI hiding
@@ -302,31 +301,6 @@ export default function MainTabs() {
                 }
                 iconSelected={
                   Icons.SwapNavIconSelected as React.ComponentType<{
-                    width: number;
-                    height: number;
-                  }>
-                }
-                style={iconStyle}
-              />
-            ),
-          }}
-        />
-        <Tab.Screen
-          name="Search"
-          component={ChatListScreen}
-          options={{
-            tabBarIcon: ({ focused, size }) => (
-              <AnimatedTabIcon
-                focused={focused}
-                size={size * 1.25}
-                icon={
-                  Icons.ChatIcon as React.ComponentType<{
-                    width: number;
-                    height: number;
-                  }>
-                }
-                iconSelected={
-                  Icons.ChatIconSelected as React.ComponentType<{
                     width: number;
                     height: number;
                   }>

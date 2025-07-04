@@ -9,9 +9,6 @@ import { TokenMillScreen } from '@/modules/token-mill';
 import { NftScreen } from '@/modules/nft';
 import { MeteoraScreen } from '@/modules/meteora';
 import LaunchlabsScreen from '@/modules/raydium/screens/LaunchlabsScreen';
-import ChatScreen from '@/screens/sample-ui/chat/chat-screen/ChatScreen';
-import ChatListScreen from '@/screens/sample-ui/chat/chat-list-screen';
-import UserSelectionScreen from '@/screens/sample-ui/chat/user-selection-screen/UserSelectionScreen';
 import OtherProfileScreen from '@/screens/sample-ui/Threads/other-profile-screen/OtherProfileScreen';
 import PostThreadScreen from '@/screens/sample-ui/Threads/post-thread-screen/PostthreadScreen';
 import FollowersFollowingListScreen from '@/core/profile/components/followers-following-listScreen/FollowersFollowingListScreen';
@@ -151,9 +148,6 @@ export default function RootNavigator() {
           <Stack.Screen name="Pumpfun" component={PumpfunScreen} />
           <Stack.Screen name="TokenMill" component={TokenMillScreen} />
           <Stack.Screen name="NftScreen" component={NftScreen} />
-          <Stack.Screen name="ChatListScreen" component={ChatListScreen} />
-          <Stack.Screen name="ChatScreen" component={ChatScreen} />
-          <Stack.Screen name="UserSelectionScreen" component={UserSelectionScreen} />
           <Stack.Screen name="PumpSwap" component={PumpSwapScreen} />
           <Stack.Screen name="MercuroScreen" component={MercuroScreen} />
           <Stack.Screen name="LaunchlabsScreen" component={LaunchlabsScreen} />

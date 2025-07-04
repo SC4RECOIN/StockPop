@@ -1,5 +1,5 @@
 // metro.config.js
-const {getDefaultConfig} = require('expo/metro-config');
+const { getDefaultConfig } = require('expo/metro-config');
 const path = require('path');
 
 const config = getDefaultConfig(__dirname);
@@ -7,7 +7,7 @@ const workspaceRoot = path.resolve(__dirname, '../..');
 
 config.transformer = {
   ...config.transformer,
-  babelTransformerPath: require.resolve('react-native-svg-transformer'),
+  babelTransformerPath: require.resolve("react-native-svg-transformer/react-native"),
 };
 
 config.resolver = {
