@@ -89,10 +89,10 @@ src/modules/pump-fun/
 
 This module relies on environment variables, typically managed via an `.env` file and exposed through `@env`:
 
--   `SERVER_URL`: The base URL for the backend server that handles metadata uploads (for Pump.fun) and PumpSwap SDK interactions.
-    -   Example Pump.fun metadata upload endpoint: `${SERVER_URL}/api/pumpfun/uploadMetadata`
-    -   Example PumpSwap backend endpoints: `${SERVER_URL}/api/pump-swap/*`
--   `HELIUS_STAKED_URL` (or `RPC_URL`): The Solana RPC endpoint used.
+-   `EXPO_PUBLIC_SERVER_URL`: The base URL for the backend server that handles metadata uploads (for Pump.fun) and PumpSwap SDK interactions.
+    -   Example Pump.fun metadata upload endpoint: `${EXPO_PUBLIC_SERVER_URL}/api/pumpfun/uploadMetadata`
+    -   Example PumpSwap backend endpoints: `${EXPO_PUBLIC_SERVER_URL}/api/pump-swap/*`
+-   `HELIUS_STAKED_URL` (or `EXPO_PUBLIC_RPC_URL`): The Solana RPC endpoint used.
 -   `COMMISSION_WALLET`: Public key of the wallet to receive commissions for Pump.fun token launches.
 
 ## Usage Example

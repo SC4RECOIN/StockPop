@@ -15,7 +15,7 @@ import {
   Linking,
 } from 'react-native';
 import { Connection, PublicKey } from '@solana/web3.js';
-import { HELIUS_STAKED_URL, SERVER_URL } from '@env';
+import { HELIUS_STAKED_URL, EXPO_PUBLIC_SERVER_URL } from '@env';
 import { useWallet } from '@/modules/wallet-providers/hooks/useWallet';
 import COLORS from '@/assets/colors';
 import Icons from '@/assets/svgs';
@@ -93,7 +93,7 @@ const LuloRebalancingYieldCard = () => {
   const fetchPendingWithdrawals = useCallback(async () => {
     if (!address) return;
     try {
-      const url = `${SERVER_URL}/api/lulo/pending-withdrawals/${address}`;
+      const url = `${EXPO_PUBLIC_SERVER_URL}/api/lulo/pending-withdrawals/${address}`;
       const res = await fetch(url);
       const json = await res.json();
       if (json.success && Array.isArray(json.withdrawals)) {
@@ -111,11 +111,11 @@ const LuloRebalancingYieldCard = () => {
     if (!address) return;
     setLuloLoading(true);
     try {
-      const apyRes = await fetch(`${SERVER_URL}/api/lulo/apy`);
+      const apyRes = await fetch(`${EXPO_PUBLIC_SERVER_URL}/api/lulo/apy`);
       const apyJson = await apyRes.json();
       if (apyJson.success) setLuloApy(apyJson.apy);
 
-      const balRes = await fetch(`${SERVER_URL}/api/lulo/balance/${address}`);
+      const balRes = await fetch(`${EXPO_PUBLIC_SERVER_URL}/api/lulo/balance/${address}`);
       const balJson = await balRes.json();
       if (balJson.success) setLuloBalance(balJson.balance?.totalUsdValue ?? 0);
     } catch (e) {
@@ -134,7 +134,7 @@ const LuloRebalancingYieldCard = () => {
     setIsProcessingTransaction(true);
     try {
       // Complete withdraw
-      const res = await fetch(`${SERVER_URL}/api/lulo/complete-withdraw`, {
+      const res = await fetch(`${EXPO_PUBLIC_SERVER_URL}/api/lulo/complete-withdraw`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -163,22 +163,22 @@ const LuloRebalancingYieldCard = () => {
       if (!mountedRef.current) return;
 
       if (signature) {
-          // Update UI
-          await fetchLuloData();
-          if (!mountedRef.current) return;
-          await fetchPendingWithdrawals();
-          if (!mountedRef.current) return;
+        // Update UI
+        await fetchLuloData();
+        if (!mountedRef.current) return;
+        await fetchPendingWithdrawals();
+        if (!mountedRef.current) return;
 
-          setModalContent('details'); // Go back to details
-          dispatch(showSuccessNotification({ message: 'Your withdrawal has been completed successfully.' }));
+        setModalContent('details'); // Go back to details
+        dispatch(showSuccessNotification({ message: 'Your withdrawal has been completed successfully.' }));
       }
 
     } catch (e: any) {
       if (mountedRef.current) {
         if (e.message.includes('timeout')) {
-            dispatch(showErrorNotification({ message: 'Transaction approval timed out. Please try again and make sure to approve the transaction in your wallet.' }));
+          dispatch(showErrorNotification({ message: 'Transaction approval timed out. Please try again and make sure to approve the transaction in your wallet.' }));
         } else {
-            dispatch(showErrorNotification({ message: e.message || 'Withdraw completion failed. Please try again.' }));
+          dispatch(showErrorNotification({ message: e.message || 'Withdraw completion failed. Please try again.' }));
         }
       }
     } finally {
@@ -190,7 +190,7 @@ const LuloRebalancingYieldCard = () => {
 
   const getWithdrawCountdown = useCallback((withdrawal: any) => {
     if (!withdrawal?.createdTimestamp) return { total: -1, text: null };
-    
+
     const now = Date.now() / 1000;
     const secondsLeft = (24 * 3600) - (now - withdrawal.createdTimestamp);
 
@@ -198,7 +198,7 @@ const LuloRebalancingYieldCard = () => {
 
     const hours = Math.floor(secondsLeft / 3600);
     const minutes = Math.floor((secondsLeft % 3600) / 60);
-    
+
     return { total: secondsLeft, text: `${hours}h ${minutes}m remaining` };
   }, []);
 
@@ -227,7 +227,7 @@ const LuloRebalancingYieldCard = () => {
       Alert.alert(
         "Complete Withdrawal",
         "Your pending withdrawal is ready to be completed. Press OK to proceed.",
-        [{ text: "OK", onPress: () => handleCompleteWithdraw(pendingWithdrawals[0])}]
+        [{ text: "OK", onPress: () => handleCompleteWithdraw(pendingWithdrawals[0]) }]
       );
       setAutoCompleteAlertShown(true);
     }
@@ -291,12 +291,12 @@ const LuloRebalancingYieldCard = () => {
 
     setIsProcessingTransaction(true);
     try {
-      const res = await fetch(`${SERVER_URL}/api/lulo/lend`, {
+      const res = await fetch(`${EXPO_PUBLIC_SERVER_URL}/api/lulo/lend`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userPublicKey: address, amount: depositValue })
       });
-      
+
       console.log('res', res);
 
       if (!mountedRef.current) return;
@@ -360,7 +360,7 @@ const LuloRebalancingYieldCard = () => {
 
     setIsProcessingTransaction(true);
     try {
-      const res1 = await fetch(`${SERVER_URL}/api/lulo/initiate-withdraw`, {
+      const res1 = await fetch(`${EXPO_PUBLIC_SERVER_URL}/api/lulo/initiate-withdraw`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userPublicKey: address, amount: withdrawValue })
@@ -368,7 +368,7 @@ const LuloRebalancingYieldCard = () => {
 
       if (!mountedRef.current) return;
       const data1 = await res1.json();
-      
+
       if (!data1.success || !data1.transaction) {
         throw new Error(data1.error || 'Failed to get transaction for initiate withdraw');
       }
@@ -434,7 +434,7 @@ const LuloRebalancingYieldCard = () => {
             </View>
           </View>
 
-          <ScrollView 
+          <ScrollView
             style={styles.modalScroll}
             contentContainerStyle={styles.scrollContent}
           >
@@ -477,7 +477,7 @@ const LuloRebalancingYieldCard = () => {
                     </Text>
                   </TouchableOpacity>
                 )}
-                
+
                 <View style={{ flexDirection: 'row', gap: 12, marginTop: 20 }}>
                   <TouchableOpacity
                     style={styles.withdrawButton}
@@ -549,7 +549,7 @@ const LuloRebalancingYieldCard = () => {
             </TouchableOpacity>
             <Text style={styles.modalTitle}>{modalType === 'deposit' ? 'Deposit' : 'Withdraw'}</Text>
             <View style={styles.providerContainer}>
-               <Image
+              <Image
                 source={require('@/assets/images/lulolog.jpg')}
                 style={styles.providerLogo}
                 resizeMode="contain"
@@ -557,10 +557,10 @@ const LuloRebalancingYieldCard = () => {
               <Text style={styles.providerName}>Rebalancing Yield</Text>
             </View>
           </View>
-          
+
           <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
             <View style={styles.amountDisplayContainer}>
-              <View style={{flexDirection: 'row', alignItems: 'center'}}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Icons.CryptoIcon width={32} height={32} color={COLORS.brandBlue} />
                 <Text style={styles.usdcText}>USDC</Text>
               </View>
@@ -577,7 +577,7 @@ const LuloRebalancingYieldCard = () => {
 
             <View style={styles.sliderContainer}>
               <Slider
-                style={{width: '100%', height: 40}}
+                style={{ width: '100%', height: 40 }}
                 minimumValue={0}
                 maximumValue={1}
                 value={sliderValue}
@@ -605,11 +605,11 @@ const LuloRebalancingYieldCard = () => {
                 <Text style={styles.sliderText}>100%</Text>
               </View>
             </View>
-            <View style={{flex: 1}} />
+            <View style={{ flex: 1 }} />
           </ScrollView>
 
           <View style={styles.bottomContainer}>
-             <TouchableOpacity
+            <TouchableOpacity
               style={[
                 styles.confirmButton,
                 { backgroundColor: modalType === 'deposit' ? '#049FB4' : COLORS.errorRed },
@@ -699,7 +699,7 @@ const LuloRebalancingYieldCard = () => {
 
   return (
     <>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.actionButton}
         onPress={() => setModalContent('details')}
       >
@@ -728,7 +728,7 @@ const LuloRebalancingYieldCard = () => {
           </Text>
         </View>
       </TouchableOpacity>
-      
+
       <Modal
         animationType="slide"
         transparent={true}

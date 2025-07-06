@@ -135,6 +135,6 @@ const SellSection: React.FC<SellSectionProps> = ({ userPublicKey }) => {
 ## Environment Variables
 
 - **`TENSOR_API_KEY`**: Your API key for the TensorTrade API. This is essential for most functionalities within the module.
-- **`HELIUS_API_KEY`** (Optional, used in some Helius-specific calls if integrated, e.g., for compressed NFTs, but primary interaction is Tensor).
+- **`EXPO_PUBLIC_HELIUS_API_KEY`** (Optional, used in some Helius-specific calls if integrated, e.g., for compressed NFTs, but primary interaction is Tensor).
 
 Ensure these are configured in your application's environment.

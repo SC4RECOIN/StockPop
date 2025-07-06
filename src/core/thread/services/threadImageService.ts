@@ -4,7 +4,7 @@
  * Handles thread image upload and compression for posts.
  */
 
-import {SERVER_URL} from '@env';
+import { EXPO_PUBLIC_SERVER_URL } from '@env';
 import * as ImageManipulator from 'expo-image-manipulator';
 
 /**
@@ -21,7 +21,7 @@ export async function compressImage(imageUri: string): Promise<string> {
       [{ resize: { width: 1024, height: 1024 } }],
       { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
     );
-    
+
     return manipResult.uri;
   } catch (error) {
     console.error('Error compressing image:', error);
@@ -42,14 +42,14 @@ export async function uploadThreadImage(
   userId: string,
   imageUri: string,
 ): Promise<string> {
-  if (!userId || !imageUri || !SERVER_URL) {
+  if (!userId || !imageUri || !EXPO_PUBLIC_SERVER_URL) {
     throw new Error('Missing data for thread image upload');
   }
 
   try {
     // First compress the image
     const compressedImageUri = await compressImage(imageUri);
-    
+
     const formData = new FormData();
     formData.append('userId', userId);
     // Append the image under "threadImage"
@@ -59,7 +59,7 @@ export async function uploadThreadImage(
       name: `thread_${Date.now()}.jpg`,
     } as any);
 
-    const response = await fetch(`${SERVER_URL}/api/thread/images/upload`, {
+    const response = await fetch(`${EXPO_PUBLIC_SERVER_URL}/api/thread/images/upload`, {
       method: 'POST',
       body: formData,
     });

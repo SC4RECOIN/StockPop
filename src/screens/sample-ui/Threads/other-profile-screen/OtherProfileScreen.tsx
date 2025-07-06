@@ -9,11 +9,11 @@ import ProfileSkeleton from '@/core/profile/components/ProfileSkeleton';
 import { ThreadPost } from '@/core/thread/components/thread.types';
 import { fetchAllPosts } from '@/shared/state/thread/reducer';
 import COLORS from '@/assets/colors';
-import { SERVER_URL } from '@env';
+import { EXPO_PUBLIC_SERVER_URL } from '@env';
 import { flattenPosts } from '@/core/thread/components/thread.utils';
 import { useFetchNFTs } from '@/modules/nft';
 
-const SERVER_BASE_URL = SERVER_URL || 'http://localhost:3000';
+const SERVER_BASE_URL = EXPO_PUBLIC_SERVER_URL || 'http://localhost:3000';
 
 type OtherProfileRouteProp = RouteProp<RootStackParamList, 'OtherProfile'>;
 

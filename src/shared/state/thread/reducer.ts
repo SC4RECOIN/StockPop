@@ -1,22 +1,22 @@
 // FILE: src/state/thread/reducer.ts
-import {createSlice, createAsyncThunk, PayloadAction} from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import type {
   ThreadPost,
   ThreadSection,
 } from '@/core/thread/components/thread.types';
-import {allposts as fallbackPosts} from '../../mocks/posts';
-import {SERVER_URL} from '@env';
+import { allposts as fallbackPosts } from '../../mocks/posts';
+import { EXPO_PUBLIC_SERVER_URL } from '@env';
 
-const SERVER_BASE_URL = SERVER_URL || 'http://localhost:3000';
+const SERVER_BASE_URL = EXPO_PUBLIC_SERVER_URL || 'http://localhost:3000';
 
 // Debug environment variable loading
-console.log('[Thread Reducer] SERVER_URL from @env:', SERVER_URL);
+console.log('[Thread Reducer] EXPO_PUBLIC_SERVER_URL from @env:', EXPO_PUBLIC_SERVER_URL);
 console.log('[Thread Reducer] SERVER_BASE_URL resolved to:', SERVER_BASE_URL);
 
 // fetchAllPosts
 export const fetchAllPosts = createAsyncThunk(
   'thread/fetchAllPosts',
-  async (userId: string | undefined, {rejectWithValue}) => {
+  async (userId: string | undefined, { rejectWithValue }) => {
     try {
       const url = userId
         ? `${SERVER_BASE_URL}/api/posts?userId=${encodeURIComponent(userId)}`
@@ -48,11 +48,11 @@ export const createRootPostAsync = createAsyncThunk(
     sections: ThreadSection[];
     localId?: string;
   }) => {
-    const {userId, sections} = payload;
+    const { userId, sections } = payload;
     const res = await fetch(`${SERVER_BASE_URL}/api/posts`, {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({userId, sections}),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, sections }),
     });
     const data = await res.json();
     if (!data.success) throw new Error(data.error || 'Failed to create post');
@@ -73,7 +73,7 @@ export const createReplyAsync = createAsyncThunk(
   }) => {
     const res = await fetch(`${SERVER_BASE_URL}/api/posts/reply`, {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
     const data = await res.json();
@@ -95,9 +95,9 @@ export const createRetweetAsync = createAsyncThunk(
       userId: string;
       sections?: ThreadSection[];
     },
-    {getState},
+    { getState },
   ) => {
-    const state = getState() as {thread: ThreadState};
+    const state = getState() as { thread: ThreadState };
 
     // Get the target post
     const targetPost = state.thread.allPosts.find(
@@ -140,7 +140,7 @@ export const createRetweetAsync = createAsyncThunk(
       // For API, we should update the existing retweet instead of creating a new one
       const updateRes = await fetch(`${SERVER_BASE_URL}/api/posts/update`, {
         method: 'PATCH',
-        headers: {'Content-Type': 'application/json'},
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           postId: existingRetweet.id,
           sections: payload.sections,
@@ -159,7 +159,7 @@ export const createRetweetAsync = createAsyncThunk(
     // Normal case: create a new retweet
     const res = await fetch(`${SERVER_BASE_URL}/api/posts/retweet`, {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
     const data = await res.json();
@@ -171,11 +171,11 @@ export const createRetweetAsync = createAsyncThunk(
 // updatePostAsync
 export const updatePostAsync = createAsyncThunk(
   'thread/updatePost',
-  async ({postId, sections}: {postId: string; sections: ThreadSection[]}) => {
+  async ({ postId, sections }: { postId: string; sections: ThreadSection[] }) => {
     const res = await fetch(`${SERVER_BASE_URL}/api/posts/update`, {
       method: 'PATCH',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({postId, sections}),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ postId, sections }),
     });
     const data = await res.json();
     if (!data.success) throw new Error(data.error || 'Failed to update post');
@@ -189,9 +189,9 @@ export const updatePostAsync = createAsyncThunk(
  */
 export const deletePostAsync = createAsyncThunk(
   'thread/deletePost',
-  async (postId: string, {getState}) => {
+  async (postId: string, { getState }) => {
     // Get post info before deleting for proper state updates
-    const state = getState() as {thread: ThreadState};
+    const state = getState() as { thread: ThreadState };
     const postToDelete = state.thread.allPosts.find(p => p.id === postId);
     const retweetOf = postToDelete?.retweetOf?.id;
     const parentId = postToDelete?.parentId;
@@ -226,8 +226,8 @@ export const addReactionAsync = createAsyncThunk(
   }) => {
     const res = await fetch(`${SERVER_BASE_URL}/api/posts/${postId}/reaction`, {
       method: 'PATCH',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({reactionEmoji, userId}),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reactionEmoji, userId }),
     });
     const data = await res.json();
     if (!data.success) throw new Error(data.error || 'Failed to add reaction');
@@ -335,9 +335,9 @@ export const threadSlice = createSlice({
      */
     addReplyLocally: (
       state,
-      action: PayloadAction<{parentId: string; reply: ThreadPost}>,
+      action: PayloadAction<{ parentId: string; reply: ThreadPost }>,
     ) => {
-      const {parentId, reply} = action.payload;
+      const { parentId, reply } = action.payload;
       function addReply(posts: ThreadPost[]): boolean {
         for (const post of posts) {
           if (post.id === parentId) {
@@ -405,9 +405,9 @@ export const threadSlice = createSlice({
      */
     undoRetweetLocally: (
       state,
-      action: PayloadAction<{userId: string; originalPostId: string}>,
+      action: PayloadAction<{ userId: string; originalPostId: string }>,
     ) => {
-      const {userId, originalPostId} = action.payload;
+      const { userId, originalPostId } = action.payload;
 
       // Find the retweet post to remove
       const retweet = findRetweetByUser(state, userId, originalPostId);
@@ -546,7 +546,7 @@ export const threadSlice = createSlice({
               };
             }
             // Normal case - just update sections
-            return {...p, sections: updatedPost.sections};
+            return { ...p, sections: updatedPost.sections };
           }
           if (p.replies.length > 0) {
             p.replies = updatePostRecursively(p.replies);
@@ -559,7 +559,7 @@ export const threadSlice = createSlice({
 
     // deletePostAsync
     builder.addCase(deletePostAsync.fulfilled, (state, action) => {
-      const {postId, retweetOf, parentId} = action.payload;
+      const { postId, retweetOf, parentId } = action.payload;
 
       // Remove the post
       state.allPosts = removePostRecursive(state.allPosts, postId);
@@ -591,12 +591,12 @@ export const threadSlice = createSlice({
 
     // addReactionAsync - optimistic update on pending
     builder.addCase(addReactionAsync.pending, (state, action) => {
-      const {postId, reactionEmoji, userId} = action.meta.arg;
+      const { postId, reactionEmoji, userId } = action.meta.arg;
 
       function updatePostOptimistically(posts: ThreadPost[]): ThreadPost[] {
         return posts.map(p => {
           if (p.id === postId) {
-            const currentReactions = {...(p.reactions || {})};
+            const currentReactions = { ...(p.reactions || {}) };
             const currentUserReaction = p.userReaction;
             let newReactionCount = p.reactionCount || 0;
             let newUserReaction: string | null = null;
@@ -689,9 +689,9 @@ export const threadSlice = createSlice({
 });
 
 export const {
-  addPostLocally, 
-  addReplyLocally, 
-  addRetweetLocally, 
+  addPostLocally,
+  addReplyLocally,
+  addRetweetLocally,
   undoRetweetLocally,
   setActiveReactionTray,
   closeReactionTray

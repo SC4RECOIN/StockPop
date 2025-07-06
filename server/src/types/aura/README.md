@@ -35,7 +35,7 @@ npm install
 3. Create a `.env` file in the root directory and add the required environment variables:
 ```env
 PORT=3000
-RPC_URL=https://api.mainnet-beta.solana.com
+EXPO_PUBLIC_RPC_URL=https://api.mainnet-beta.solana.com
 ```
 
 ## Development

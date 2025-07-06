@@ -1,11 +1,5 @@
-import React, {createContext, ReactNode, useContext} from 'react';
+import React, { createContext, ReactNode, useContext } from 'react';
 import {
-  DefaultAuthConfig,
-  DefaultTransactionConfig,
-  DefaultMockDataConfig,
-  AuthProviderConfig,
-  TransactionProviderConfig,
-  MockDataConfig,
   DefaultCustomizationConfig,
   CustomizationConfig,
 } from '.';

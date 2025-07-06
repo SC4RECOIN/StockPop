@@ -1,16 +1,16 @@
 import express, { Request, Response } from "express";
 import { config } from "dotenv";
-import{
-GetAssetsByOwnerParams, 
-GetAssetsByAuthorityParams, 
-GetAssetsByGroupParams, 
-GetAssetsByCreatorParams, 
-GetSignaturesForAssetParams, 
-SearchAssetsParams,
-GetTokenAccountsParams,
-GetAssetProofParams,
-GetAssetsByBatchParams,
-GetAssetProofBatchParams
+import {
+    GetAssetsByOwnerParams,
+    GetAssetsByAuthorityParams,
+    GetAssetsByGroupParams,
+    GetAssetsByCreatorParams,
+    GetSignaturesForAssetParams,
+    SearchAssetsParams,
+    GetTokenAccountsParams,
+    GetAssetProofParams,
+    GetAssetsByBatchParams,
+    GetAssetProofBatchParams
 } from "../../types/aura/interface";
 
 config();
@@ -18,7 +18,7 @@ const router = express.Router() as any;
 
 
 async function fetchRPC(method: string, params: any) {
-    const response = await fetch(process.env.RPC_URL || "https://aura-mainnet.metaplex.com", {
+    const response = await fetch(process.env.EXPO_PUBLIC_RPC_URL || "https://aura-mainnet.metaplex.com", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -66,14 +66,14 @@ router.post("/assets/batch", async (req: Request<{}, {}, GetAssetsByBatchParams>
     try {
         // Expect an array of asset IDs in the request body
         const { assetIds } = req.body;
-        
+
         // Validate input
         if (!Array.isArray(assetIds)) {
             return res.status(400).json({ error: "assetIds must be an array" });
         }
 
-        const assets = await fetchRPC("getAssetBatch", { 
-            ids: assetIds 
+        const assets = await fetchRPC("getAssetBatch", {
+            ids: assetIds
         });
         res.json(assets);
     } catch (error) {
@@ -86,14 +86,14 @@ router.post("/assets/proof/batch", async (req: Request<{}, {}, GetAssetProofBatc
     try {
         // Expect an array of asset IDs in the request body
         const { assetIds } = req.body;
-        
+
         // Validate input
         if (!Array.isArray(assetIds)) {
             return res.status(400).json({ error: "assetIds must be an array" });
         }
 
-        const proofs = await fetchRPC("getAssetProofBatch", { 
-            ids: assetIds 
+        const proofs = await fetchRPC("getAssetProofBatch", {
+            ids: assetIds
         });
         res.json(proofs);
     } catch (error) {
@@ -104,13 +104,13 @@ router.post("/assets/proof/batch", async (req: Request<{}, {}, GetAssetProofBatc
 // Fetch assets by Owner
 router.post("/assets/owner", async (req: Request<{}, {}, GetAssetsByOwnerParams>, res: Response): Promise<any> => {
     try {
-        const { 
+        const {
             ownerAddress,
             sortBy,
             limit,
             page,
             before,
-            after 
+            after
         } = req.body;
 
         if (!ownerAddress) {
@@ -139,13 +139,13 @@ router.post("/assets/owner", async (req: Request<{}, {}, GetAssetsByOwnerParams>
 // Fetch assets by Authority
 router.post("/assets/authority", async (req: Request<{}, {}, GetAssetsByAuthorityParams>, res: Response): Promise<any> => {
     try {
-        const { 
+        const {
             authorityAddress,
             sortBy,
             limit,
             page,
             before,
-            after 
+            after
         } = req.body;
 
         // Validate required parameter
@@ -176,14 +176,14 @@ router.post("/assets/authority", async (req: Request<{}, {}, GetAssetsByAuthorit
 // Fetch assets by Group
 router.post("/assets/group", async (req: Request<{}, {}, GetAssetsByGroupParams>, res: Response): Promise<any> => {
     try {
-        const { 
+        const {
             groupKey,
             groupValue,
             sortBy,
             limit,
             page,
             before,
-            after 
+            after
         } = req.body;
 
         // Validate required parameters
@@ -214,14 +214,14 @@ router.post("/assets/group", async (req: Request<{}, {}, GetAssetsByGroupParams>
 // Fetch assets by Creator
 router.post("/assets/creator", async (req: Request<{}, {}, GetAssetsByCreatorParams>, res: Response): Promise<any> => {
     try {
-        const { 
+        const {
             creatorAddress,
             onlyVerified,
             sortBy,
             limit,
             page,
             before,
-            after 
+            after
         } = req.body;
 
         // Validate required parameter
@@ -252,12 +252,12 @@ router.post("/assets/creator", async (req: Request<{}, {}, GetAssetsByCreatorPar
 // Fetch signatures for asset
 router.post("/asset/signatures", async (req: Request<{}, {}, GetSignaturesForAssetParams>, res: Response): Promise<any> => {
     try {
-        const { 
+        const {
             id,
             page,
             limit,
             before,
-            after 
+            after
         } = req.body;
 
         // Validate required parameter
@@ -289,7 +289,7 @@ router.post("/asset/signatures", async (req: Request<{}, {}, GetSignaturesForAss
 // Fetch token accounts
 router.post("/token/accounts", async (req: Request<{}, {}, GetTokenAccountsParams>, res: Response): Promise<any> => {
     try {
-        const { 
+        const {
             mint,
             owner,
             limit,
@@ -302,8 +302,8 @@ router.post("/token/accounts", async (req: Request<{}, {}, GetTokenAccountsParam
 
         // Validate that at least one of mint or owner is provided
         if (!mint && !owner) {
-            return res.status(400).json({ 
-                error: "Either mint or owner address is required" 
+            return res.status(400).json({
+                error: "Either mint or owner address is required"
             });
         }
 
@@ -330,7 +330,7 @@ router.post("/token/accounts", async (req: Request<{}, {}, GetTokenAccountsParam
 // Search assets endpoint
 router.post("/assets/search", async (req: Request<{}, {}, SearchAssetsParams>, res: Response): Promise<any> => {
     try {
-        const { 
+        const {
             negate,
             interface: interfaceType,
             ownerAddress,

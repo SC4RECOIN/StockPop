@@ -1,20 +1,20 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { Alert, Modal, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import {
-    PRIVY_APP_ID,
-    PRIVY_CLIENT_ID,
+    EXPO_PUBLIC_PRIVY_APP_ID,
+    EXPO_PUBLIC_PRIVY_CLIENT_ID,
     CLUSTER,
     TURNKEY_BASE_URL,
     TURNKEY_RP_ID,
     TURNKEY_RP_NAME,
     TURNKEY_ORGANIZATION_ID,
     DYNAMIC_ENVIRONMENT_ID,
-    HELIUS_API_KEY,
+    EXPO_PUBLIC_HELIUS_API_KEY,
     HELIUS_RPC_CLUSTER,
-    SERVER_URL,
+    EXPO_PUBLIC_SERVER_URL,
     TENSOR_API_KEY,
     COINGECKO_API_KEY,
-    BIRDEYE_API_KEY,
+    EXPO_PUBLIC_BIRDEYE_API_KEY,
     HELIUS_STAKED_URL,
     HELIUS_STAKED_API_KEY
 } from '@env';
@@ -45,7 +45,7 @@ export function EnvErrorProvider({ children }: EnvErrorProviderProps) {
     useEffect(() => {
         // Always check for missing env vars, regardless of dev mode
         checkMissingEnvVars();
-        
+
         console.log('[EnvErrorContext] Provider initialized:', {
             isDevMode,
             checkingEnvVars: true
@@ -55,20 +55,20 @@ export function EnvErrorProvider({ children }: EnvErrorProviderProps) {
     const checkMissingEnvVars = () => {
         // Manually check only environment variables used in the frontend
         const envVars: Record<string, string | undefined> = {
-            PRIVY_APP_ID,
-            PRIVY_CLIENT_ID,
+            EXPO_PUBLIC_PRIVY_APP_ID,
+            EXPO_PUBLIC_PRIVY_CLIENT_ID,
             CLUSTER,
             TURNKEY_BASE_URL,
             TURNKEY_RP_ID,
             TURNKEY_RP_NAME,
             TURNKEY_ORGANIZATION_ID,
             DYNAMIC_ENVIRONMENT_ID,
-            HELIUS_API_KEY,
+            EXPO_PUBLIC_HELIUS_API_KEY,
             HELIUS_RPC_CLUSTER,
-            SERVER_URL,
+            EXPO_PUBLIC_SERVER_URL,
             TENSOR_API_KEY,
             COINGECKO_API_KEY,
-            BIRDEYE_API_KEY,
+            EXPO_PUBLIC_BIRDEYE_API_KEY,
             HELIUS_STAKED_URL,
             HELIUS_STAKED_API_KEY
         };
@@ -83,7 +83,7 @@ export function EnvErrorProvider({ children }: EnvErrorProviderProps) {
         }
 
         setMissingEnvVars(missing);
-        
+
         console.log('[EnvErrorContext] Environment check result:', {
             missingVarsCount: missing.length,
             missingVarsList: missing.slice(0, 3),

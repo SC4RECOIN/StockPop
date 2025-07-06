@@ -4,7 +4,7 @@
  * Service for fetching and handling profile actions/transactions.
  */
 
-import { HELIUS_API_KEY, HELIUS_STAKED_API_KEY } from '@env';
+import { EXPO_PUBLIC_HELIUS_API_KEY, HELIUS_STAKED_API_KEY } from '@env';
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { Action, TokenTransfer, SwapEvent } from '../types/index';
 
@@ -18,7 +18,7 @@ export const fetchWalletActionsAsync = createAsyncThunk(
       return rejectWithValue('Wallet address is required');
     }
 
-    const heliusApiKey = HELIUS_STAKED_API_KEY || HELIUS_API_KEY;
+    const heliusApiKey = HELIUS_STAKED_API_KEY || EXPO_PUBLIC_HELIUS_API_KEY;
     if (!heliusApiKey) {
       return rejectWithValue('Helius API key is not configured');
     }
@@ -36,7 +36,7 @@ export const fetchWalletActionsAsync = createAsyncThunk(
         const timeoutId = setTimeout(() => controller.abort(), 30000);
 
         try {
-          const res = await fetch(heliusUrl, { 
+          const res = await fetch(heliusUrl, {
             signal: controller.signal,
             headers: {
               'Accept': 'application/json',
@@ -52,7 +52,7 @@ export const fetchWalletActionsAsync = createAsyncThunk(
 
           const data = await res.json();
           console.log(`Data received successfully, items: ${data?.length || 0}`);
-          
+
           // Enrich the data with better formatted information
           const enrichedData = await enrichActionTransactions(data, walletAddress);
           return enrichedData || [];
@@ -66,12 +66,12 @@ export const fetchWalletActionsAsync = createAsyncThunk(
       } catch (err: any) {
         lastError = err;
         console.error(`Attempt ${attempt} failed:`, err.message);
-        
+
         // If this was the last attempt, throw the error
         if (attempt === maxRetries) {
           return rejectWithValue(err.message || 'Failed to fetch actions after multiple attempts');
         }
-        
+
         // Wait before retrying (exponential backoff)
         await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
       }
@@ -95,7 +95,7 @@ export const fetchWalletActions = async (walletAddress: string, limit: number = 
 
   try {
     console.log('Fetching actions for wallet:', walletAddress);
-    const heliusUrl = `https://api.helius.xyz/v0/addresses/${walletAddress}/transactions?api-key=${HELIUS_API_KEY}&limit=${limit}`;
+    const heliusUrl = `https://api.helius.xyz/v0/addresses/${walletAddress}/transactions?api-key=${EXPO_PUBLIC_HELIUS_API_KEY}&limit=${limit}`;
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);
@@ -109,7 +109,7 @@ export const fetchWalletActions = async (walletAddress: string, limit: number = 
 
     const data = await res.json();
     console.log('Data received, items:', data?.length || 0);
-    
+
     // Enrich the data with better formatted information
     const enrichedData = await enrichActionTransactions(data, walletAddress);
     return enrichedData || [];
@@ -117,40 +117,40 @@ export const fetchWalletActions = async (walletAddress: string, limit: number = 
     console.error('Error fetching actions:', err.message);
     throw new Error(err.message || 'Failed to fetch actions');
   }
-}; 
+};
 
 /**
  * Enrich transaction data with more usable information
  */
 export const enrichActionTransactions = async (actions: Action[], walletAddress: string) => {
   if (!actions || actions.length === 0) return [];
-  
+
   return actions.map(action => {
     // Determine transaction type with more specificity
     let enrichedType = action.type || action.transactionType || 'UNKNOWN';
-    
+
     // Process swap transactions
     if (action.events?.swap) {
       enrichedType = 'SWAP';
-      
+
       // Extract swap details if available
       const swap = action.events.swap as SwapEvent;
       const hasTokenInputs = swap.tokenInputs && swap.tokenInputs.length > 0;
       const hasTokenOutputs = swap.tokenOutputs && swap.tokenOutputs.length > 0;
-      
+
       if (hasTokenInputs && hasTokenOutputs && swap.tokenInputs && swap.tokenOutputs) {
         // Extract token symbols if available
         const inputToken = swap.tokenInputs[0];
         const outputToken = swap.tokenOutputs[0];
-        
-        const inputAmount = inputToken.rawTokenAmount?.tokenAmount 
+
+        const inputAmount = inputToken.rawTokenAmount?.tokenAmount
           ? parseFloat(inputToken.rawTokenAmount.tokenAmount) / Math.pow(10, inputToken.rawTokenAmount.decimals || 0)
           : 0;
-          
+
         const outputAmount = outputToken.rawTokenAmount?.tokenAmount
           ? parseFloat(outputToken.rawTokenAmount.tokenAmount) / Math.pow(10, outputToken.rawTokenAmount.decimals || 0)
           : 0;
-          
+
         // Add enriched info
         action.enrichedData = {
           swapType: 'TOKEN_TO_TOKEN',
@@ -166,11 +166,11 @@ export const enrichActionTransactions = async (actions: Action[], walletAddress:
         const outputAmount = outputToken.rawTokenAmount?.tokenAmount
           ? parseFloat(outputToken.rawTokenAmount.tokenAmount) / Math.pow(10, outputToken.rawTokenAmount.decimals || 0)
           : 0;
-          
-        const nativeAmount = typeof swap.nativeInput.amount === 'string' 
-          ? parseFloat(swap.nativeInput.amount) 
+
+        const nativeAmount = typeof swap.nativeInput.amount === 'string'
+          ? parseFloat(swap.nativeInput.amount)
           : swap.nativeInput.amount;
-          
+
         action.enrichedData = {
           swapType: 'SOL_TO_TOKEN',
           inputSymbol: 'SOL',
@@ -185,11 +185,11 @@ export const enrichActionTransactions = async (actions: Action[], walletAddress:
         const inputAmount = inputToken.rawTokenAmount?.tokenAmount
           ? parseFloat(inputToken.rawTokenAmount.tokenAmount) / Math.pow(10, inputToken.rawTokenAmount.decimals || 0)
           : 0;
-          
-        const nativeAmount = typeof swap.nativeOutput.amount === 'string' 
-          ? parseFloat(swap.nativeOutput.amount) 
+
+        const nativeAmount = typeof swap.nativeOutput.amount === 'string'
+          ? parseFloat(swap.nativeOutput.amount)
           : swap.nativeOutput.amount;
-          
+
         action.enrichedData = {
           swapType: 'TOKEN_TO_SOL',
           inputSymbol: truncateAddress(inputToken.mint),
@@ -200,39 +200,39 @@ export const enrichActionTransactions = async (actions: Action[], walletAddress:
         };
       }
     }
-    
+
     // Process transfer transactions
     else if (action.nativeTransfers && action.nativeTransfers.length > 0) {
       enrichedType = 'TRANSFER';
       const transfer = action.nativeTransfers[0];
-      
+
       action.enrichedData = {
         transferType: 'SOL',
         amount: transfer.amount / 1_000_000_000, // lamports to SOL
         direction: transfer.fromUserAccount === walletAddress ? 'OUT' : 'IN',
-        counterparty: transfer.fromUserAccount === walletAddress 
+        counterparty: transfer.fromUserAccount === walletAddress
           ? truncateAddress(transfer.toUserAccount)
           : truncateAddress(transfer.fromUserAccount)
       };
     }
-    
+
     // Process token transfers
     else if (action.tokenTransfers && action.tokenTransfers.length > 0) {
       enrichedType = 'TOKEN_TRANSFER';
       const transfer = action.tokenTransfers[0] as TokenTransfer;
-      
+
       action.enrichedData = {
         transferType: 'TOKEN',
         tokenSymbol: transfer.symbol || truncateAddress(transfer.mint),
         amount: transfer.tokenAmount,
         direction: transfer.fromUserAccount === walletAddress ? 'OUT' : 'IN',
-        counterparty: transfer.fromUserAccount === walletAddress 
+        counterparty: transfer.fromUserAccount === walletAddress
           ? truncateAddress(transfer.toUserAccount)
           : truncateAddress(transfer.fromUserAccount),
         decimals: transfer.decimals || 0
       };
     }
-    
+
     return {
       ...action,
       enrichedType

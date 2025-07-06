@@ -6,14 +6,14 @@ import {
   Transaction,
   VersionedTransaction,
 } from '@solana/web3.js';
-import {AnchorProvider} from '@coral-xyz/anchor';
-import {PumpFunSDK} from 'pumpdotfun-sdk';
-import {Buffer} from 'buffer';
+import { AnchorProvider } from '@coral-xyz/anchor';
+import { PumpFunSDK } from 'pumpdotfun-sdk';
+import { Buffer } from 'buffer';
 import { ENDPOINTS, PUBLIC_KEYS } from '@/shared/config/constants';
-import { 
-  RaydiumSwapTransactionParams, 
-  PumpFunBondingBuyParams, 
-  PumpFunBondingSellParams 
+import {
+  RaydiumSwapTransactionParams,
+  PumpFunBondingBuyParams,
+  PumpFunBondingSellParams
 } from '@/modules/pump-fun/types';
 import { HELIUS_STAKED_URL } from '@env';
 
@@ -21,8 +21,8 @@ import { HELIUS_STAKED_URL } from '@env';
  * Setup: a standard AnchorProvider.
  */
 export function getProvider(): AnchorProvider {
-  const RPC_URL = HELIUS_STAKED_URL || ENDPOINTS.helius;
-  const connection = new Connection(RPC_URL, 'confirmed');
+  const EXPO_PUBLIC_RPC_URL = HELIUS_STAKED_URL || ENDPOINTS.helius;
+  const connection = new Connection(EXPO_PUBLIC_RPC_URL, 'confirmed');
   // Dummy wallet (no signing needed here).
   const dummyWallet = {
     publicKey: new PublicKey('11111111111111111111111111111111'),
@@ -127,7 +127,7 @@ export async function getSwapTransaction(params: RaydiumSwapTransactionParams): 
   const url = `${RAYDIUM_SWAP_API_BASE}/transaction/swap-base-in`;
   const response = await fetch(url, {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
   if (!response.ok) {
@@ -173,7 +173,7 @@ export async function buildPumpFunBuyTransaction({
     lamportsToBuy,
     slippageBasis,
   );
-  const {blockhash} = await connection.getLatestBlockhash();
+  const { blockhash } = await connection.getLatestBlockhash();
   transaction.recentBlockhash = blockhash;
   transaction.feePayer = payerPubkey;
   return transaction;
@@ -200,7 +200,7 @@ export async function buildPumpFunSellTransaction({
     lamportsToSell,
     slippageBasis,
   );
-  const {blockhash} = await connection.getLatestBlockhash();
+  const { blockhash } = await connection.getLatestBlockhash();
   transaction.recentBlockhash = blockhash;
   transaction.feePayer = sellerPubkey;
   return transaction;

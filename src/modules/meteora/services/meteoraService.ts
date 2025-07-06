@@ -14,11 +14,11 @@ import {
   VersionedTransaction,
 } from '@solana/web3.js';
 import BN from 'bn.js';
-import {Buffer} from 'buffer';
-import {SERVER_URL} from '@env';
+import { Buffer } from 'buffer';
+import { EXPO_PUBLIC_SERVER_URL } from '@env';
 
 // API base URL - Use local server that implements the SDK
-const API_BASE_URL = `${SERVER_URL || 'http://localhost:8080'}/api`;
+const API_BASE_URL = `${EXPO_PUBLIC_SERVER_URL || 'http://localhost:8080'}/api`;
 
 // Helper function to make API calls
 async function apiCall(endpoint: string, method: string = 'GET', data?: any) {
@@ -28,7 +28,7 @@ async function apiCall(endpoint: string, method: string = 'GET', data?: any) {
     // Log the data for debugging if this is a POST request
     if (method === 'POST' && data) {
       // Clean up the logged data for readability, avoiding large numbers that might stringify as hex
-      const cleanedData = {...data};
+      const cleanedData = { ...data };
       if (cleanedData.buyAmount)
         cleanedData.buyAmount = String(cleanedData.buyAmount);
       if (cleanedData.minimumAmountOut)
@@ -46,7 +46,7 @@ async function apiCall(endpoint: string, method: string = 'GET', data?: any) {
 
     if (data && (method === 'POST' || method === 'PUT')) {
       // Ensure numeric values are properly stringified
-      const processedData = {...data};
+      const processedData = { ...data };
 
       // Handle specific endpoints that need numeric values as strings
       if (endpoint.includes('/pool-and-buy')) {
@@ -74,9 +74,9 @@ async function apiCall(endpoint: string, method: string = 'GET', data?: any) {
       // Return empty mock data instead of throwing an error for better UX
       // This will show empty states in the UI instead of errors
       if (endpoint.includes('/positions/')) {
-        return {success: true, positions: []};
+        return { success: true, positions: [] };
       } else if (endpoint.includes('/pools')) {
-        return {success: true, pools: []};
+        return { success: true, pools: [] };
       }
 
       throw new Error(`Expected JSON response but got ${contentType}`);
@@ -97,9 +97,9 @@ async function apiCall(endpoint: string, method: string = 'GET', data?: any) {
 
     // Return mock data for specific endpoints to prevent UI from breaking
     if (endpoint.includes('/positions/')) {
-      return {success: true, positions: []};
+      return { success: true, positions: [] };
     } else if (endpoint.includes('/pools')) {
-      return {success: true, pools: []};
+      return { success: true, pools: [] };
     }
 
     throw error;
@@ -114,7 +114,7 @@ export const createConfig = async (
   connection: Connection,
   wallet: any,
   onStatusUpdate?: (status: string) => void,
-): Promise<{txId: string}> => {
+): Promise<{ txId: string }> => {
   try {
     onStatusUpdate?.('Creating DBC config...');
 
@@ -176,7 +176,7 @@ export const createConfig = async (
     const txSignature = await wallet.sendTransaction(
       txToSignConfig,
       connection,
-      {confirmTransaction: true, statusCallback: onStatusUpdate},
+      { confirmTransaction: true, statusCallback: onStatusUpdate },
     );
 
     onStatusUpdate?.('Config created successfully!');
@@ -199,7 +199,7 @@ export const buildCurveByMarketCap = async (
   connection: Connection,
   wallet: any,
   onStatusUpdate?: (status: string) => void,
-): Promise<{txId: string; configAddress: string}> => {
+): Promise<{ txId: string; configAddress: string }> => {
   try {
     onStatusUpdate?.('Building curve by market cap...');
 
@@ -301,7 +301,7 @@ export const buildCurveByMarketCap = async (
       txSignature = await wallet.sendTransaction(
         txToSignCurveRetry,
         connection,
-        {confirmTransaction: false, statusCallback: onStatusUpdate},
+        { confirmTransaction: false, statusCallback: onStatusUpdate },
       );
 
       // Wait a few seconds to allow transaction to propagate
@@ -397,7 +397,7 @@ export const createPool = async (
   connection: Connection,
   wallet: any,
   onStatusUpdate?: (status: string) => void,
-): Promise<{txId: string; poolAddress: string; baseMintAddress: string}> => {
+): Promise<{ txId: string; poolAddress: string; baseMintAddress: string }> => {
   try {
     onStatusUpdate?.('Creating token pool...');
 
@@ -480,7 +480,7 @@ export const createPool = async (
       txSignature = await wallet.sendTransaction(
         txToSignPoolRetry,
         connection,
-        {confirmTransaction: false, statusCallback: onStatusUpdate},
+        { confirmTransaction: false, statusCallback: onStatusUpdate },
       );
 
       // Wait longer on mainnet to allow transaction to propagate
@@ -628,7 +628,7 @@ export const uploadTokenMetadata = async (
       console.log(
         'Using image URL:',
         params.imageUri.substring(0, 50) +
-          (params.imageUri.length > 50 ? '...' : ''),
+        (params.imageUri.length > 50 ? '...' : ''),
       );
       formData.append('imageUrl', params.imageUri);
     }
@@ -850,7 +850,7 @@ export const createTokenWithCurve = async (
       const txSignature = await wallet.sendTransaction(
         txToSignPoolAndBuy,
         connection,
-        {confirmTransaction: true, statusCallback: onStatusUpdate},
+        { confirmTransaction: true, statusCallback: onStatusUpdate },
       );
 
       poolResult = {
@@ -922,7 +922,7 @@ export const createTokenWithCurve = async (
     console.error('Error creating token with curve:', error);
     onStatusUpdate?.(
       'Failed to create token with curve: ' +
-        (error instanceof Error ? error.message : 'Unknown error'),
+      (error instanceof Error ? error.message : 'Unknown error'),
     );
     throw error;
   }
@@ -936,7 +936,7 @@ export const createPoolAndBuy = async (
   connection: Connection,
   wallet: any,
   onStatusUpdate?: (status: string) => void,
-): Promise<{txId: string; poolAddress: string}> => {
+): Promise<{ txId: string; poolAddress: string }> => {
   try {
     onStatusUpdate?.('Creating pool and buying tokens...');
 
@@ -1057,7 +1057,7 @@ export const createPoolAndBuy = async (
       txSignature = await wallet.sendTransaction(
         txToSignPoolAndBuyRetry,
         connection,
-        {confirmTransaction: false, statusCallback: onStatusUpdate},
+        { confirmTransaction: false, statusCallback: onStatusUpdate },
       );
 
       // Wait longer to allow transaction to propagate on mainnet
@@ -1138,7 +1138,7 @@ export const createPoolMetadata = async (
   connection: Connection,
   wallet: any,
   onStatusUpdate?: (status: string) => void,
-): Promise<{txId: string}> => {
+): Promise<{ txId: string }> => {
   try {
     onStatusUpdate?.('Creating pool metadata...');
 
@@ -1181,7 +1181,7 @@ export const createPoolMetadata = async (
     const txSignature = await wallet.sendTransaction(
       txToSignMetadata,
       connection,
-      {confirmTransaction: true, statusCallback: onStatusUpdate},
+      { confirmTransaction: true, statusCallback: onStatusUpdate },
     );
 
     onStatusUpdate?.('Pool metadata created successfully!');
@@ -1303,7 +1303,7 @@ export const executeTrade = async (
   poolAddress: string,
   wallet: any,
   onStatusUpdate?: (status: string) => void,
-): Promise<{txId: string}> => {
+): Promise<{ txId: string }> => {
   try {
     onStatusUpdate?.('Preparing trade...');
 
@@ -1381,7 +1381,7 @@ export const executeTrade = async (
       // Create a fallback connection to a public RPC endpoint
       // TODO: Use a configured RPC endpoint instead of hardcoding
       const fallbackConnection = new Connection(
-        process.env.RPC_URL || 'https://api.mainnet-beta.solana.com', // Example: Prefer env var
+        process.env.EXPO_PUBLIC_RPC_URL || 'https://api.mainnet-beta.solana.com', // Example: Prefer env var
         'confirmed',
       );
 
@@ -1389,7 +1389,7 @@ export const executeTrade = async (
       txSignature = await wallet.sendTransaction(
         txToSignSwap,
         fallbackConnection,
-        {confirmTransaction: true, statusCallback: onStatusUpdate},
+        { confirmTransaction: true, statusCallback: onStatusUpdate },
       );
     } catch (sendError) {
       // If it's some other error, rethrow it
@@ -1426,7 +1426,7 @@ export const addLiquidity = async (
   connection: Connection,
   wallet: any,
   onStatusUpdate?: (status: string) => void,
-): Promise<{txId: string}> => {
+): Promise<{ txId: string }> => {
   try {
     onStatusUpdate?.('Preparing to add liquidity...');
 
@@ -1495,7 +1495,7 @@ export const addLiquidity = async (
     const txSignature = await wallet.sendTransaction(
       txToSignAddLiq,
       connection,
-      {confirmTransaction: true, statusCallback: onStatusUpdate},
+      { confirmTransaction: true, statusCallback: onStatusUpdate },
     );
 
     onStatusUpdate?.('Liquidity added successfully!');
@@ -1519,7 +1519,7 @@ export const removeLiquidity = async (
   connection: Connection,
   wallet: any,
   onStatusUpdate?: (status: string) => void,
-): Promise<{txId: string}> => {
+): Promise<{ txId: string }> => {
   try {
     onStatusUpdate?.('Preparing to remove liquidity...');
 
@@ -1561,7 +1561,7 @@ export const removeLiquidity = async (
     const txSignature = await wallet.sendTransaction(
       txToSignRemoveLiq,
       connection,
-      {confirmTransaction: true, statusCallback: onStatusUpdate},
+      { confirmTransaction: true, statusCallback: onStatusUpdate },
     );
 
     onStatusUpdate?.('Liquidity removed successfully!');

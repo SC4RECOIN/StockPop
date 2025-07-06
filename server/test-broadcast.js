@@ -3,13 +3,13 @@
 
 const fetch = require('node-fetch');
 
-const SERVER_URL = 'http://localhost:8080';
+const EXPO_PUBLIC_SERVER_URL = 'http://localhost:8080';
 
 async function testBroadcast() {
   try {
     console.log('🧪 Testing broadcast notification...');
-    
-    const response = await fetch(`${SERVER_URL}/api/notifications/broadcast`, {
+
+    const response = await fetch(`${EXPO_PUBLIC_SERVER_URL}/api/notifications/broadcast`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -28,7 +28,7 @@ async function testBroadcast() {
     });
 
     const result = await response.json();
-    
+
     if (result.success) {
       console.log('✅ Broadcast sent successfully!');
       console.log('📊 Results:', {
@@ -51,10 +51,10 @@ async function testBroadcast() {
 async function getStats() {
   try {
     console.log('📊 Getting notification stats...');
-    
-    const response = await fetch(`${SERVER_URL}/api/notifications/stats`);
+
+    const response = await fetch(`${EXPO_PUBLIC_SERVER_URL}/api/notifications/stats`);
     const result = await response.json();
-    
+
     if (result.success) {
       console.log('📈 Notification Statistics:');
       console.log('- Total Active Tokens:', result.data.totalActive);
@@ -71,11 +71,11 @@ async function getStats() {
 // Run tests
 async function runTests() {
   console.log('🚀 Starting notification tests...\n');
-  
+
   await getStats();
   console.log('\n');
   await testBroadcast();
-  
+
   console.log('\n✅ Tests completed!');
 }
 

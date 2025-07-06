@@ -109,7 +109,7 @@ cp .env.example .env
 | Category | Variables |
 |----------|-----------|
 | **General** | `NODE_ENV`<br>`PORT`<br>`DATABASE_URL` |
-| **Solana Network** | `RPC_URL`<br>`WALLET_PRIVATE_KEY`<br>`SWAP_AUTHORITY_KEY`<br>`COMMISSION_WALLET` |
+| **Solana Network** | `EXPO_PUBLIC_RPC_URL`<br>`WALLET_PRIVATE_KEY`<br>`SWAP_AUTHORITY_KEY`<br>`COMMISSION_WALLET` |
 | **TokenMill** | `TOKEN_MILL_PROGRAMID`<br>`TOKEN_MILL_CONFIG_PDA` |
 | **Google Cloud Storage** | `GCS_BUCKET_NAME`<br>`SERVICE_ACCOUNT_EMAIL` |
 | **Turnkey Wallet API** | `TURNKEY_API_URL`<br>`TURNKEY_ORGANIZATION_ID`<br>`TURNKEY_API_PUBLIC_KEY`<br>`TURNKEY_API_PRIVATE_KEY` |
@@ -129,9 +129,9 @@ PORT=8080
 # SOLANA NETWORK CONFIGURATION
 # ===========================================
 # Mainnet RPC URL (replace with your Helius API key)
-RPC_URL=https://staked.helius-rpc.com?api-key=YOUR_HELIUS_API_KEY
+EXPO_PUBLIC_RPC_URL=https://staked.helius-rpc.com?api-key=YOUR_HELIUS_API_KEY
 # Devnet RPC URL for testing
-# RPC_URL=https://devnet.helius-rpc.com/?api-key=YOUR_HELIUS_API_KEY
+# EXPO_PUBLIC_RPC_URL=https://devnet.helius-rpc.com/?api-key=YOUR_HELIUS_API_KEY
 
 # Wallet private key for server operations (Base58 encoded)
 WALLET_PRIVATE_KEY=YOUR_WALLET_PRIVATE_KEY_HERE

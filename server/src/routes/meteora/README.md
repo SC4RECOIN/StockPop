@@ -25,17 +25,17 @@ Before using this module, you need to set up the required environment variables:
 
 ```
 # Solana RPC URL - Required
-RPC_URL=https://api.mainnet-beta.solana.com
+EXPO_PUBLIC_RPC_URL=https://api.mainnet-beta.solana.com
 
 # For devnet testing
-# RPC_URL=https://api.devnet.solana.com
+# EXPO_PUBLIC_RPC_URL=https://api.devnet.solana.com
 
 # For custom RPC providers like Helius or Alchemy
-# RPC_URL=https://mainnet.helius-rpc.com/?api-key=YOUR_API_KEY
-# RPC_URL=https://solana-mainnet.g.alchemy.com/v2/YOUR_API_KEY
+# EXPO_PUBLIC_RPC_URL=https://mainnet.helius-rpc.com/?api-key=YOUR_API_KEY
+# EXPO_PUBLIC_RPC_URL=https://solana-mainnet.g.alchemy.com/v2/YOUR_API_KEY
 ```
 
-The service will fall back to devnet if no RPC_URL is provided, but this is not recommended for production use.
+The service will fall back to devnet if no EXPO_PUBLIC_RPC_URL is provided, but this is not recommended for production use.
 
 ## API Endpoints
 

@@ -3,7 +3,7 @@ import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import { Platform, Alert } from 'react-native';
 import { navigationRef } from '../hooks/useAppNavigation';
-import { SERVER_URL } from '@env';
+import { EXPO_PUBLIC_SERVER_URL } from '@env';
 
 // Configure how notifications are handled when app is in foreground
 Notifications.setNotificationHandler({
@@ -55,7 +55,7 @@ class NotificationService {
   private expoPushToken: string | null = null;
   private notificationListener: any = null;
   private responseListener: any = null;
-  private serverBaseUrl: string = SERVER_URL || 'http://localhost:8080';
+  private serverBaseUrl: string = EXPO_PUBLIC_SERVER_URL || 'http://localhost:8080';
 
   /**
    * Initialize the notification service
@@ -63,13 +63,13 @@ class NotificationService {
   async initialize(): Promise<void> {
     try {
       console.log('🔔 Initializing notification service...');
-      
+
       // Set up notification listeners first
       this.setupNotificationListeners();
-      
+
       // Register for push notifications
       await this.registerForPushNotifications();
-      
+
       console.log('✅ Notification service initialized successfully');
     } catch (error) {
       console.error('❌ Failed to initialize notification service:', error);
@@ -87,7 +87,7 @@ class NotificationService {
 
     try {
       console.log('📤 Registering push token with server...');
-      
+
       const requestData: RegisterTokenRequest = {
         userId,
         expoPushToken: this.expoPushToken,
@@ -130,7 +130,7 @@ class NotificationService {
 
     try {
       console.log('📤 Unregistering push token from server...');
-      
+
       const response = await fetch(`${this.serverBaseUrl}/api/notifications/remove-token`, {
         method: 'DELETE',
         headers: {
@@ -170,14 +170,14 @@ class NotificationService {
   async registerForPushNotifications(): Promise<string | null> {
     try {
       console.log('🔔 Starting push notification registration...');
-      
+
       // Check if running on physical device
       if (!Device.isDevice) {
         console.warn('⚠️ Push notifications only work on physical devices');
-        console.log('📱 Device info:', { 
-          isDevice: Device.isDevice, 
+        console.log('📱 Device info:', {
+          isDevice: Device.isDevice,
           deviceType: Device.deviceType,
-          platform: Platform.OS 
+          platform: Platform.OS
         });
         return null;
       }
@@ -206,7 +206,7 @@ class NotificationService {
       console.log('🔐 Checking existing permissions...');
       const permissionResponse = await Notifications.getPermissionsAsync();
       console.log('📋 Full permission response:', permissionResponse);
-      
+
       let finalStatus = permissionResponse.status;
 
       // Request permissions if not granted
@@ -235,7 +235,7 @@ class NotificationService {
       if (finalStatus !== 'granted') {
         console.warn('⚠️ Notification permissions not granted');
         console.log('📋 Final status:', finalStatus);
-        
+
         // Show alert to user about permissions
         Alert.alert(
           'Notifications Disabled',
@@ -251,7 +251,7 @@ class NotificationService {
       console.log('🆔 Getting project ID...');
       const projectId = Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
       console.log('📋 Project ID found:', projectId);
-      
+
       if (!projectId) {
         console.error('❌ Project ID not found');
         console.log('🔍 Constants debug:', {
@@ -323,9 +323,9 @@ class NotificationService {
           data: { test: true },
           sound: 'default',
         },
-        trigger: { 
+        trigger: {
           type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-          seconds: 2 
+          seconds: 2
         },
       });
       console.log('✅ Local notification scheduled');
@@ -339,7 +339,7 @@ class NotificationService {
    */
   private setupNotificationListeners(): void {
     console.log('🎧 Setting up notification listeners...');
-    
+
     // Listener for notifications received while app is in foreground
     this.notificationListener = Notifications.addNotificationReceivedListener(
       (notification) => {
@@ -364,9 +364,9 @@ class NotificationService {
    */
   private handleNotificationReceived(notification: Notifications.Notification): void {
     const { title, body, data } = notification.request.content;
-    
+
     console.log('📨 Received notification:', { title, body, data });
-    
+
     // Just log the notification, don't show an alert
     // The notification will be handled by the system's notification display
   }
@@ -376,7 +376,7 @@ class NotificationService {
    */
   private handleNotificationResponse(response: Notifications.NotificationResponse): void {
     const data = response.notification.request.content.data as NotificationData;
-    
+
     if (!data) {
       console.log('No data in notification response');
       return;
@@ -400,7 +400,7 @@ class NotificationService {
   private navigateToScreen(screenName: string, params?: string): void {
     try {
       const parsedParams = params ? JSON.parse(params) : {};
-      
+
       if (navigationRef.current) {
         (navigationRef.current as any).navigate(screenName, parsedParams);
         console.log(`🧭 Navigated to ${screenName}`, parsedParams);
@@ -457,11 +457,11 @@ class NotificationService {
 
     try {
       console.log('🚀 Starting push notification send process...');
-      
+
       // Check if we have proper permissions first
       const permissions = await Notifications.getPermissionsAsync();
       console.log('📋 Current permissions before sending:', permissions);
-      
+
       if (!permissions.granted) {
         console.warn('⚠️ Notifications not granted, but attempting to send anyway');
       }
@@ -523,7 +523,7 @@ class NotificationService {
       console.log('✅ Push notification sent successfully!');
       console.log('🎯 Token used:', this.expoPushToken);
       console.log('📱 Check your device for the notification');
-      
+
       // Check delivery receipt after a delay
       if (result.data?.id) {
         console.log('🔍 Will check delivery receipt in 10 seconds...');
@@ -531,7 +531,7 @@ class NotificationService {
           this.checkNotificationReceipt(result.data.id);
         }, 10000);
       }
-      
+
       return true;
     } catch (error: any) {
       console.error('❌ Error sending test notification:', error);
@@ -550,7 +550,7 @@ class NotificationService {
   private async checkNotificationReceipt(notificationId: string): Promise<void> {
     try {
       console.log('🔍 Checking delivery receipt for notification:', notificationId);
-      
+
       const response = await fetch('https://exp.host/--/api/v2/push/getReceipts', {
         method: 'POST',
         headers: {
@@ -570,7 +570,7 @@ class NotificationService {
 
       const result = await response.json();
       console.log('📋 Delivery receipt:', JSON.stringify(result, null, 2));
-      
+
       const receipt = result.data?.[notificationId];
       if (receipt) {
         if (receipt.status === 'ok') {
@@ -578,7 +578,7 @@ class NotificationService {
         } else if (receipt.status === 'error') {
           console.error('❌ Notification delivery failed:', receipt.message);
           console.error('❌ Error details:', receipt.details);
-          
+
           // Provide specific guidance based on error
           if (receipt.message?.includes('DeviceNotRegistered')) {
             console.error('🚨 Device not registered - token may be invalid');
@@ -602,10 +602,10 @@ class NotificationService {
   async getNotificationStatus(): Promise<any> {
     try {
       console.log('📊 Gathering comprehensive notification status...');
-      
+
       const permissions = await Notifications.getPermissionsAsync();
       console.log('📋 Permissions:', permissions);
-      
+
       let devicePushToken = null;
       try {
         devicePushToken = await Notifications.getDevicePushTokenAsync();
@@ -613,9 +613,9 @@ class NotificationService {
       } catch (error) {
         console.warn('⚠️ Could not get device push token:', error);
       }
-      
+
       const projectId = Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
-      
+
       // Check if we can reach Expo's servers
       let serverReachable = false;
       try {
@@ -629,7 +629,7 @@ class NotificationService {
       } catch (error) {
         console.warn('⚠️ Cannot reach Expo servers:', error);
       }
-      
+
       const status = {
         permissions,
         devicePushToken,
@@ -660,27 +660,27 @@ class NotificationService {
    */
   private checkForCommonIssues(permissions: any, projectId: string | undefined): string[] {
     const issues: string[] = [];
-    
+
     if (!Device.isDevice) {
       issues.push('Running on simulator/emulator - push notifications require physical device');
     }
-    
+
     if (!permissions.granted) {
       issues.push('Notification permissions not granted');
     }
-    
+
     if (!projectId) {
       issues.push('No Expo project ID found in configuration');
     }
-    
+
     if (!this.expoPushToken) {
       issues.push('No Expo push token generated');
     }
-    
+
     if (Platform.OS === 'ios' && permissions.ios?.status !== 'authorized') {
       issues.push(`iOS notification status: ${permissions.ios?.status}`);
     }
-    
+
     return issues;
   }
 
@@ -736,9 +736,9 @@ class NotificationService {
           data: { local: true },
           sound: 'default',
         },
-        trigger: { 
+        trigger: {
           type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-          seconds 
+          seconds
         },
       });
       console.log(`📅 Local notification scheduled for ${seconds} seconds`);

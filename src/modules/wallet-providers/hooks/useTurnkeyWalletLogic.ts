@@ -2,8 +2,8 @@ import { useState, useCallback, useEffect } from 'react';
 import { Alert } from 'react-native';
 import { useCustomization } from '@/shared/config/CustomizationProvider';
 import { TURNKEY_ORGANIZATION_ID } from '@env';
-import { useTurnkey } from '@turnkey/sdk-react-native'; 
-import { SERVER_URL } from '@env';
+import { useTurnkey } from '@turnkey/sdk-react-native';
+import { EXPO_PUBLIC_SERVER_URL } from '@env';
 import { PublicKey } from '@solana/web3.js';
 
 // Types for the OTP flow
@@ -24,13 +24,13 @@ const hexToSolanaAddress = (hexKey: string): string => {
   try {
     // Remove '0x' prefix if present
     const cleanHex = hexKey.startsWith('0x') ? hexKey.slice(2) : hexKey;
-    
+
     // Convert hex to bytes
     const bytes = new Uint8Array(cleanHex.length / 2);
     for (let i = 0; i < cleanHex.length; i += 2) {
       bytes[i / 2] = parseInt(cleanHex.substr(i, 2), 16);
     }
-    
+
     // Create a Solana PublicKey from the bytes and return as base58
     const solanaKey = new PublicKey(bytes);
     return solanaKey.toBase58();
@@ -50,12 +50,12 @@ export function useTurnkeyWalletLogic() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(false);
   const [otpResponse, setOtpResponse] = useState<OtpResponse | null>(null);
-  
+
   // Get Turnkey SDK hooks
   const { createEmbeddedKey, createSession, clearSession } = useTurnkey();
-  
+
   const { auth: { turnkey: turnkeyConfig } } = useCustomization();
-  
+
   // Monitor for authenticated user
   useEffect(() => {
     if (walletAddress) {
@@ -66,7 +66,7 @@ export function useTurnkeyWalletLogic() {
       setUser(null);
     }
   }, [walletAddress]);
-  
+
   // Clear any existing session when component mounts
   useEffect(() => {
     const clearExistingSession = async () => {
@@ -80,7 +80,7 @@ export function useTurnkeyWalletLogic() {
         console.log('No session to clear or error clearing session:', error);
       }
     };
-    
+
     // Only clear if not authenticated
     if (!isAuthenticated) {
       clearExistingSession();
@@ -99,7 +99,7 @@ export function useTurnkeyWalletLogic() {
   }) => {
     setLoading(true);
     setStatusMessage?.('Initiating OTP verification...');
-    
+
     try {
       // Clear any existing session first
       if (clearSession) {
@@ -111,29 +111,29 @@ export function useTurnkeyWalletLogic() {
           // Continue with the login flow
         }
       }
-      
-      const SERVER_BASE_URL = SERVER_URL || 'http://localhost:8080';
+
+      const SERVER_BASE_URL = EXPO_PUBLIC_SERVER_URL || 'http://localhost:8080';
       const response = await fetch(`${SERVER_BASE_URL}/api/auth/initOtpAuth`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          otpType: 'OTP_TYPE_EMAIL', 
-          contact: email 
+        body: JSON.stringify({
+          otpType: 'OTP_TYPE_EMAIL',
+          contact: email
         }),
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error || 'Failed to initiate OTP verification');
       }
-      
+
       setStatusMessage?.('OTP sent to your email');
       setOtpResponse({
         otpId: data.otpId,
         organizationId: data.organizationId,
       });
-      
+
       return data;
     } catch (error: any) {
       console.error('OTP initiation error:', error);
@@ -159,10 +159,10 @@ export function useTurnkeyWalletLogic() {
       setStatusMessage?.('No active OTP verification in progress');
       return;
     }
-    
+
     setLoading(true);
     setStatusMessage?.('Verifying OTP...');
-    
+
     try {
       // Try to clear any existing session first
       if (clearSession) {
@@ -174,11 +174,11 @@ export function useTurnkeyWalletLogic() {
           // Continue with the verification flow
         }
       }
-      
+
       // Generate public key for the embedded key
       const targetPublicKey = await createEmbeddedKey();
-      
-      const SERVER_BASE_URL = SERVER_URL || 'http://localhost:8080';
+
+      const SERVER_BASE_URL = EXPO_PUBLIC_SERVER_URL || 'http://localhost:8080';
       const response = await fetch(`${SERVER_BASE_URL}/api/auth/otpAuth`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -191,35 +191,35 @@ export function useTurnkeyWalletLogic() {
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error || 'Failed to verify OTP');
       }
-      
+
       if (data.credentialBundle) {
         // Create session with the credential bundle
         setStatusMessage?.('Creating wallet session...');
-        
+
         // Use a unique session key based on the organization ID to avoid conflicts
         const sessionKey = `@turnkey/session/${otpResponse.organizationId}`;
-        await createSession({ 
+        await createSession({
           bundle: data.credentialBundle,
           sessionKey: sessionKey
         });
-        
+
         // Convert the hex public key to a base58 Solana address
         console.log('Raw public key from Turnkey:', targetPublicKey);
         const solanaAddress = hexToSolanaAddress(targetPublicKey);
         console.log('Converted Solana address:', solanaAddress);
-        
+
         // Set the wallet address to the converted base58 format
         setWalletAddress(solanaAddress);
         setIsAuthenticated(true);
         setUser({ id: solanaAddress });
-        
+
         setStatusMessage?.(`Successfully authenticated with wallet: ${solanaAddress}`);
         onWalletConnected?.({ provider: 'turnkey', address: solanaAddress });
-        
+
         return { address: solanaAddress };
       } else {
         throw new Error('No credential bundle received');
@@ -249,7 +249,7 @@ export function useTurnkeyWalletLogic() {
   }) => {
     setLoading(true);
     setStatusMessage?.(`Authenticating with ${providerName}...`);
-    
+
     try {
       // Try to clear any existing session first
       if (clearSession) {
@@ -261,11 +261,11 @@ export function useTurnkeyWalletLogic() {
           // Continue with the login flow
         }
       }
-      
+
       // Generate public key for the embedded key
       const targetPublicKey = await createEmbeddedKey();
-      
-      const SERVER_BASE_URL = SERVER_URL || 'http://localhost:8080';
+
+      const SERVER_BASE_URL = EXPO_PUBLIC_SERVER_URL || 'http://localhost:8080';
       const response = await fetch(`${SERVER_BASE_URL}/api/auth/oAuthLogin`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -278,35 +278,35 @@ export function useTurnkeyWalletLogic() {
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error || `Failed to authenticate with ${providerName}`);
       }
-      
+
       if (data.credentialBundle) {
         // Create session with the credential bundle
         setStatusMessage?.('Creating wallet session...');
-        
+
         // Use a unique session key to avoid conflicts
         const sessionKey = `@turnkey/session/${providerName}`;
-        await createSession({ 
+        await createSession({
           bundle: data.credentialBundle,
-          sessionKey: sessionKey 
+          sessionKey: sessionKey
         });
-        
+
         // Convert the hex public key to a base58 Solana address
         console.log('Raw public key from Turnkey OAuth:', targetPublicKey);
         const solanaAddress = hexToSolanaAddress(targetPublicKey);
         console.log('Converted Solana address from OAuth:', solanaAddress);
-        
+
         // Set the wallet address to the converted base58 format
         setWalletAddress(solanaAddress);
         setIsAuthenticated(true);
         setUser({ id: solanaAddress });
-        
+
         setStatusMessage?.(`Successfully authenticated with wallet: ${solanaAddress}`);
         onWalletConnected?.({ provider: 'turnkey', address: solanaAddress });
-        
+
         return { address: solanaAddress };
       } else {
         throw new Error('No credential bundle received');
@@ -328,7 +328,7 @@ export function useTurnkeyWalletLogic() {
       setWalletAddress(null);
       setUser(null);
       setIsAuthenticated(false);
-      
+
       // Try to clear the Turnkey session, but don't fail if session not found
       if (clearSession) {
         try {
@@ -345,7 +345,7 @@ export function useTurnkeyWalletLogic() {
           }
         }
       }
-      
+
       setStatusMessage?.('Logged out successfully');
     } catch (error: any) {
       console.error('Error during Turnkey logout:', error);

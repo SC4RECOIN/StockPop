@@ -1,8 +1,8 @@
-import {SERVER_URL} from '@env';
-import {createSlice, createAsyncThunk, PayloadAction} from '@reduxjs/toolkit';
+import { EXPO_PUBLIC_SERVER_URL } from '@env';
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 
 export interface AuthState {
-  provider: 'privy' | 'dynamic' | 'turnkey' | 'mwa' |  null;
+  provider: 'privy' | 'dynamic' | 'turnkey' | 'mwa' | null;
   address: string | null;
   isLoggedIn: boolean;
   profilePicUrl: string | null;
@@ -28,10 +28,10 @@ const initialState: AuthState = {
   attachmentData: {},
 };
 
-const SERVER_BASE_URL = SERVER_URL || 'http://localhost:3000';
+const SERVER_BASE_URL = EXPO_PUBLIC_SERVER_URL || 'http://localhost:3000';
 
 // Debug environment variable loading
-console.log('[Auth Reducer] SERVER_URL from @env:', SERVER_URL);
+console.log('[Auth Reducer] EXPO_PUBLIC_SERVER_URL from @env:', EXPO_PUBLIC_SERVER_URL);
 console.log('[Auth Reducer] SERVER_BASE_URL resolved to:', SERVER_BASE_URL);
 
 /**
@@ -66,7 +66,7 @@ export const fetchUserProfile = createAsyncThunk(
 export const updateUsername = createAsyncThunk(
   'auth/updateUsername',
   async (
-    {userId, newUsername}: {userId: string; newUsername: string},
+    { userId, newUsername }: { userId: string; newUsername: string },
     thunkAPI,
   ) => {
     try {
@@ -74,8 +74,8 @@ export const updateUsername = createAsyncThunk(
         `${SERVER_BASE_URL}/api/profile/updateUsername`,
         {
           method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({userId, username: newUsername}),
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, username: newUsername }),
         },
       );
       const data = await response.json();
@@ -99,7 +99,7 @@ export const updateUsername = createAsyncThunk(
 export const updateDescription = createAsyncThunk(
   'auth/updateDescription',
   async (
-    {userId, newDescription}: {userId: string; newDescription: string},
+    { userId, newDescription }: { userId: string; newDescription: string },
     thunkAPI,
   ) => {
     try {
@@ -107,8 +107,8 @@ export const updateDescription = createAsyncThunk(
         `${SERVER_BASE_URL}/api/profile/updateDescription`,
         {
           method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({userId, description: newDescription}),
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId, description: newDescription }),
         },
       );
       const data = await response.json();
@@ -138,7 +138,7 @@ export const attachCoinToProfile = createAsyncThunk(
       attachmentData,
     }: {
       userId: string;
-      attachmentData: {coin: {mint: string; symbol?: string; name?: string}};
+      attachmentData: { coin: { mint: string; symbol?: string; name?: string } };
     },
     thunkAPI,
   ) => {
@@ -147,7 +147,7 @@ export const attachCoinToProfile = createAsyncThunk(
         `${SERVER_BASE_URL}/api/profile/attachCoin`,
         {
           method: 'POST',
-          headers: {'Content-Type': 'application/json'},
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             userId,
             attachmentData,
@@ -159,7 +159,7 @@ export const attachCoinToProfile = createAsyncThunk(
         return thunkAPI.rejectWithValue(data.error || 'Failed to attach coin');
       }
       return data.attachmentData as {
-        coin: {mint: string; symbol?: string; name?: string};
+        coin: { mint: string; symbol?: string; name?: string };
       };
     } catch (err: any) {
       return thunkAPI.rejectWithValue(
@@ -187,7 +187,7 @@ export const removeAttachedCoin = createAsyncThunk(
         `${SERVER_BASE_URL}/api/profile/removeAttachedCoin`,
         {
           method: 'POST',
-          headers: {'Content-Type': 'application/json'},
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             userId,
           }),
@@ -227,7 +227,7 @@ export const deleteAccountAction = createAsyncThunk<
         `${SERVER_BASE_URL}/api/profile/delete-account`,
         {
           method: 'DELETE',
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${userId}` // Add the user's wallet address as a Bearer token
           },
@@ -270,12 +270,12 @@ const authSlice = createSlice({
       state.provider = action.payload.provider;
       state.address = action.payload.address;
       state.isLoggedIn = true;
-      
+
       // Only update these if they are provided or we don't have them
       if (action.payload.profilePicUrl || !state.profilePicUrl) {
         state.profilePicUrl = action.payload.profilePicUrl || state.profilePicUrl;
       }
-      
+
       // For username: 
       // 1. Use provided username if available
       // 2. Keep existing username if we already have one
@@ -287,7 +287,7 @@ const authSlice = createSlice({
         state.username = action.payload.address.substring(0, 6);
         console.log('[AuthReducer] Setting default username from wallet address:', state.username);
       }
-      
+
       if (action.payload.description || !state.description) {
         state.description = action.payload.description || state.description;
       }
@@ -325,10 +325,10 @@ const authSlice = createSlice({
       // Only update auth state if:
       // 1. We are logged in AND
       // 2. The requested user ID matches the current user's address
-      if (state.isLoggedIn && 
-          state.address && 
-          requestedUserId && 
-          requestedUserId.toLowerCase() === state.address.toLowerCase()) {
+      if (state.isLoggedIn &&
+        state.address &&
+        requestedUserId &&
+        requestedUserId.toLowerCase() === state.address.toLowerCase()) {
         state.profilePicUrl = fetchedProfilePicUrl || state.profilePicUrl;
         state.username = fetchedUsername || state.username;
         state.description = fetchedDescription || state.description;
@@ -348,7 +348,7 @@ const authSlice = createSlice({
 
     builder.addCase(attachCoinToProfile.fulfilled, (state, action) => {
       if (state.address) {
-        state.attachmentData = {coin: action.payload.coin};
+        state.attachmentData = { coin: action.payload.coin };
       }
     });
 
@@ -378,6 +378,6 @@ const authSlice = createSlice({
   },
 });
 
-export const {loginSuccess, logoutSuccess, updateProfilePic} =
+export const { loginSuccess, logoutSuccess, updateProfilePic } =
   authSlice.actions;
 export default authSlice.reducer;

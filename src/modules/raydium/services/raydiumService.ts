@@ -4,11 +4,11 @@ import {
   VersionedTransaction,
   PublicKey,
 } from '@solana/web3.js';
-import {ENDPOINTS} from '@/shared/config/constants';
-import {CLUSTER, HELIUS_STAKED_URL, SERVER_URL} from '@env';
-import {TransactionService} from '../../wallet-providers/services/transaction/transactionService';
-import {TokenInfo} from '../../data-module/types/tokenTypes';
-import {Buffer} from 'buffer';
+import { ENDPOINTS } from '@/shared/config/constants';
+import { CLUSTER, HELIUS_STAKED_URL, EXPO_PUBLIC_SERVER_URL } from '@env';
+import { TransactionService } from '../../wallet-providers/services/transaction/transactionService';
+import { TokenInfo } from '../../data-module/types/tokenTypes';
+import { Buffer } from 'buffer';
 
 // Constants
 const DEFAULT_SLIPPAGE_BPS = 300; // 2% default slippage for Raydium
@@ -117,9 +117,9 @@ export class RaydiumService {
     });
 
     try {
-      const uploadEndpoint = `${SERVER_URL}/api/raydium/launchpad/uploadMetadata`;
+      const uploadEndpoint = `${EXPO_PUBLIC_SERVER_URL}/api/raydium/launchpad/uploadMetadata`;
       const formData = new FormData();
-      
+
       // Add metadata fields
       formData.append('tokenName', tokenName);
       formData.append('tokenSymbol', tokenSymbol);
@@ -127,7 +127,7 @@ export class RaydiumService {
       formData.append('twitter', twitter || '');
       formData.append('telegram', telegram || '');
       formData.append('website', website || '');
-      
+
       // Add image
       formData.append('image', {
         uri: imageUri,
@@ -139,17 +139,17 @@ export class RaydiumService {
         method: 'POST',
         body: formData,
       });
-      
+
       if (!uploadResponse.ok) {
         const errorText = await uploadResponse.text();
         throw new Error(`Metadata upload failed: ${errorText}`);
       }
-      
+
       const uploadJson = await uploadResponse.json();
       if (!uploadJson?.success || !uploadJson.metadataUri) {
         throw new Error(uploadJson?.error || 'No metadataUri returned');
       }
-      
+
       console.log('[RaydiumService] Metadata URI created:', uploadJson.metadataUri);
       return uploadJson.metadataUri;
     } catch (error: any) {
@@ -189,7 +189,7 @@ export class RaydiumService {
 
       const response = await fetch(`${ENDPOINTS.serverBase}/api/raydium/swap`, {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           inputMint: inputToken.address,
           outputMint: outputToken.address,
@@ -338,12 +338,12 @@ export class RaydiumService {
 
     try {
       safeUpdateStatus('Preparing token launch...');
-      
+
       // If there's an imageUri but no uri, upload the metadata and image first
       let metadataUri = tokenData.uri;
       if (tokenData.imageData && !metadataUri) {
         safeUpdateStatus('Uploading token image and metadata...');
-        
+
         try {
           metadataUri = await this.uploadTokenMetadata({
             tokenName: tokenData.name,
@@ -369,7 +369,7 @@ export class RaydiumService {
         `${ENDPOINTS.serverBase}/api/raydium/launchpad/create`,
         {
           method: 'POST',
-          headers: {'Content-Type': 'application/json'},
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             tokenName: tokenData.name,
             tokenSymbol: tokenData.symbol,

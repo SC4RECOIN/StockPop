@@ -26,7 +26,7 @@ import {
   createAssociatedTokenAccountInstruction,
   getAccount,
 } from '@solana/spl-token';
-import { CLUSTER, HELIUS_API_KEY, TENSOR_API_KEY } from '@env';
+import { CLUSTER, EXPO_PUBLIC_HELIUS_API_KEY, TENSOR_API_KEY } from '@env';
 import { sellStyles as styles } from './sellSection.styles';
 import { useDispatch } from 'react-redux';
 import { ThreadSection } from '@/core/thread/components/thread.types';
@@ -112,7 +112,7 @@ async function ensureAtaIfNeeded(
  */
 async function getRealCompressedNFTData(nft: NftItem, ownerAddress: string) {
   console.log('[getRealCompressedNFTData] Called for NFT:', nft);
-  const url = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
+  const url = `https://mainnet.helius-rpc.com/?api-key=${EXPO_PUBLIC_HELIUS_API_KEY}`;
   const body = {
     jsonrpc: '2.0',
     id: 'my-id',

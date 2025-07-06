@@ -17,9 +17,9 @@ import {
   TokenMillResponse,
   SwapParams,
 } from '../../types/interfaces';
-import {TokenMillType} from './idl/token_mill';
+import { TokenMillType } from './idl/token_mill';
 import axios from 'axios';
-import {LAMPORTS_PER_SOL} from '@solana/web3.js';
+import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import {
   TOKEN_PROGRAM_ID,
   getAssociatedTokenAddressSync,
@@ -48,8 +48,8 @@ export class TokenMillClient {
   config: PublicKey = new PublicKey(process.env.TOKEN_MILL_CONFIG_PDA!);
 
   constructor() {
-    console.log('TokenMillClient initializing with RPC_URL:', process.env.RPC_URL);
-    this.connection = new Connection(process.env.RPC_URL!);
+    console.log('TokenMillClient initializing with EXPO_PUBLIC_RPC_URL:', process.env.EXPO_PUBLIC_RPC_URL);
+    this.connection = new Connection(process.env.EXPO_PUBLIC_RPC_URL!);
 
     // Initialize wallet from private key
     const privateKey = bs58.decode(process.env.WALLET_PRIVATE_KEY!);
@@ -93,7 +93,7 @@ export class TokenMillClient {
 
       console.log('Config created:', config.publicKey.toString());
       this.config = config.publicKey;
-      return {success: true, config: config.publicKey.toString(), tx};
+      return { success: true, config: config.publicKey.toString(), tx };
     } catch (error) {
       console.error('Error creating config:', error);
       throw error;
@@ -121,7 +121,7 @@ export class TokenMillClient {
     await this.connection.confirmTransaction(transactionSignature);
 
     console.log('wSol quote token badge created', wSolAccount);
-    return {success: true, transactionSignature};
+    return { success: true, transactionSignature };
   }
 
   async buildCreateMarketTx(params: any) {
@@ -230,22 +230,22 @@ export class TokenMillClient {
 
     // Add commission to specified wallet from environment variables
     const commissionWallet = new PublicKey(COMMISSION_WALLET);
-    
+
     // Calculate commission based on total supply and environment variables
     const totalSupplyInSol = totalSupply / 1_000_000; // Convert to SOL equivalent units
     const commissionAmount = Math.floor(totalSupplyInSol * COMMISSION_PERCENTAGE * LAMPORTS_PER_SOL);
-    
+
     // Ensure minimum and maximum commission from environment variables
     const finalCommissionAmount = Math.max(MIN_COMMISSION, Math.min(commissionAmount, MAX_COMMISSION));
-    
+
     console.log(`[buildCreateMarketTx] Adding ${COMMISSION_PERCENTAGE * 100}% commission (${finalCommissionAmount / LAMPORTS_PER_SOL} SOL) to:`, commissionWallet.toString());
-    
+
     const transferIx = SystemProgram.transfer({
       fromPubkey: userPubkey,
       toPubkey: commissionWallet,
       lamports: finalCommissionAmount,
     });
-    
+
     tx.add(transferIx);
 
     // Set blockhash & fee payer using helper function
@@ -298,10 +298,10 @@ export class TokenMillClient {
       tx.add(freeMarketIx);
       tx.partialSign(swapAuthorityKeypair);
       const base64Tx = serializeTransaction(tx);
-      return {success: true, data: {transaction: base64Tx}};
+      return { success: true, data: { transaction: base64Tx } };
     } catch (error: any) {
       console.error('[freeMarket] Error:', error);
-      return {success: false, error: error.message || 'Unknown error'};
+      return { success: false, error: error.message || 'Unknown error' };
     }
   }
 
@@ -320,7 +320,7 @@ export class TokenMillClient {
         null,
         6,
         mint,
-        {commitment: 'confirmed'},
+        { commitment: 'confirmed' },
         spl.TOKEN_PROGRAM_ID,
       );
 
@@ -330,7 +330,7 @@ export class TokenMillClient {
         this.wallet,
         mint.publicKey,
         this.wallet.publicKey,
-        {commitment: 'confirmed'},
+        { commitment: 'confirmed' },
         spl.TOKEN_PROGRAM_ID,
         spl.ASSOCIATED_TOKEN_PROGRAM_ID,
         true,
@@ -344,7 +344,7 @@ export class TokenMillClient {
         this.wallet.publicKey,
         100_000_000e6,
         [],
-        {commitment: 'confirmed'},
+        { commitment: 'confirmed' },
         spl.TOKEN_PROGRAM_ID,
       );
 
@@ -369,10 +369,10 @@ export class TokenMillClient {
 
   async buildSwapTx(
     params: SwapParams,
-  ): Promise<TokenMillResponse<{transaction: string}>> {
+  ): Promise<TokenMillResponse<{ transaction: string }>> {
     try {
       console.log('[buildSwapTx] START with params:', params);
-      console.log('[buildSwapTx] Using RPC_URL:', process.env.RPC_URL);
+      console.log('[buildSwapTx] Using EXPO_PUBLIC_RPC_URL:', process.env.EXPO_PUBLIC_RPC_URL);
 
       const {
         market,
@@ -604,8 +604,8 @@ export class TokenMillClient {
 
       const swapIx = await this.program.methods
         .permissionedSwap(
-          action === 'buy' ? {buy: {}} : {sell: {}},
-          tradeType === 'exactInput' ? {exactInput: {}} : {exactOutput: {}},
+          action === 'buy' ? { buy: {} } : { sell: {} },
+          tradeType === 'exactInput' ? { exactInput: {} } : { exactOutput: {} },
           new BN(amount),
           new BN(finalThreshold),
         )
@@ -650,15 +650,15 @@ export class TokenMillClient {
       const base64Tx = serializeTransaction(legacyTx);
       console.log('[buildSwapTx] DONE. Returning base64 transaction...');
 
-      return {success: true, data: {transaction: base64Tx}};
+      return { success: true, data: { transaction: base64Tx } };
     } catch (error: any) {
       console.error('[buildSwapTx] FATAL ERROR:', error);
-      return {success: false, error: error.message ?? 'Unknown error'};
+      return { success: false, error: error.message ?? 'Unknown error' };
     }
   }
 
   async buildStakeTx(
-    params: StakingParams & {userPublicKey: string},
+    params: StakingParams & { userPublicKey: string },
   ): Promise<TokenMillResponse<string>> {
     try {
       const marketPubkey = new PublicKey(params.marketAddress);
@@ -693,10 +693,10 @@ export class TokenMillClient {
       const base64Tx = serializeTransaction(legacyTx);
       console.log('[buildStakeTx] Final stake transaction (base64):', base64Tx);
 
-      return {success: true, data: base64Tx};
+      return { success: true, data: base64Tx };
     } catch (error: any) {
       console.error('[buildStakeTx] Error:', error);
-      return {success: false, error: error.message || 'Unknown error'};
+      return { success: false, error: error.message || 'Unknown error' };
     }
   }
 
@@ -710,7 +710,7 @@ export class TokenMillClient {
     duration: number;
     cliffDuration?: number;
   }): Promise<
-    TokenMillResponse<{transaction: string; ephemeralVestingPubkey: string}>
+    TokenMillResponse<{ transaction: string; ephemeralVestingPubkey: string }>
   > {
     try {
       console.log(
@@ -836,7 +836,7 @@ export class TokenMillClient {
       };
     } catch (err: any) {
       console.error('[buildCreateVestingTxWithAutoPositionAndATA] Error:', err);
-      return {success: false, error: err.message || 'Unknown error'};
+      return { success: false, error: err.message || 'Unknown error' };
     }
   }
 
@@ -847,7 +847,7 @@ export class TokenMillClient {
     userPublicKey: string;
   }): Promise<TokenMillResponse<string>> {
     try {
-      const {marketAddress, vestingPlanAddress, baseTokenMint, userPublicKey} =
+      const { marketAddress, vestingPlanAddress, baseTokenMint, userPublicKey } =
         params;
       const marketPubkey = new PublicKey(marketAddress);
       const vestingPubkey = new PublicKey(vestingPlanAddress);
@@ -903,10 +903,10 @@ export class TokenMillClient {
 
       const base64Tx = serializeTransaction(legacyTx);
 
-      return {success: true, data: base64Tx};
+      return { success: true, data: base64Tx };
     } catch (error: any) {
       console.error('[buildReleaseVestingTx] Error:', error);
-      return {success: false, error: error.message || 'Unknown error'};
+      return { success: false, error: error.message || 'Unknown error' };
     }
   }
 
@@ -915,10 +915,10 @@ export class TokenMillClient {
     userPublicKey: string;
     askPrices: number[];
     bidPrices: number[];
-  }): Promise<TokenMillResponse<{transaction: string}>> {
+  }): Promise<TokenMillResponse<{ transaction: string }>> {
     try {
       console.log('[buildSetCurveTx] Received params:', params);
-      const {market, userPublicKey, askPrices, bidPrices} = params;
+      const { market, userPublicKey, askPrices, bidPrices } = params;
 
       const marketPubkey = new PublicKey(market);
       const userPubkey = new PublicKey(userPublicKey);
@@ -978,30 +978,30 @@ export class TokenMillClient {
         recentBlockhash: blockhash,
       });
       legacyTx.add(...anchorTx.instructions);
-      
+
       // Add commission to specified wallet from environment variables
       const commissionWallet = new PublicKey(COMMISSION_WALLET);
-      
+
       // Calculate a value based on the average ask price (which represents token pricing)
       const avgAskPrice = askPrices.reduce((sum, price) => sum + price, 0) / askPrices.length;
       // Scale factor converts the average price to a reasonable SOL commission base
       const scaleFactor = 0.000001;
       const commissionBase = avgAskPrice * scaleFactor;
       const commissionAmount = Math.floor(commissionBase * COMMISSION_PERCENTAGE * LAMPORTS_PER_SOL);
-      
+
       // Ensure minimum and maximum commission from environment variables
       const finalCommissionAmount = Math.max(MIN_COMMISSION, Math.min(commissionAmount, MAX_COMMISSION));
-      
+
       console.log(`[buildSetCurveTx] Adding ${COMMISSION_PERCENTAGE * 100}% commission (${finalCommissionAmount / LAMPORTS_PER_SOL} SOL) to:`, commissionWallet.toString());
-      
+
       const transferIx = SystemProgram.transfer({
         fromPubkey: userPubkey,
         toPubkey: commissionWallet,
         lamports: finalCommissionAmount,
       });
-      
+
       legacyTx.add(transferIx);
-      
+
       console.log(
         '[buildSetCurveTx] Created legacy transaction with instructions',
       );
@@ -1010,10 +1010,10 @@ export class TokenMillClient {
       console.log('[buildSetCurveTx] Transaction serialized to base64');
       console.log('[buildSetCurveTx] Final base64 length:', base64Tx.length);
 
-      return {success: true, data: {transaction: base64Tx}};
+      return { success: true, data: { transaction: base64Tx } };
     } catch (err: any) {
       console.error('[buildSetCurveTx] ERROR:', err);
-      return {success: false, error: err.message || 'Unknown error'};
+      return { success: false, error: err.message || 'Unknown error' };
     }
   }
 
@@ -1115,8 +1115,8 @@ export class TokenMillClient {
       )[0];
       const transaction = await this.program.methods
         .permissionedSwap(
-          action === 'buy' ? {buy: {}} : {sell: {}},
-          tradeType === 'exactInput' ? {exactInput: {}} : {exactOutput: {}},
+          action === 'buy' ? { buy: {} } : { sell: {} },
+          tradeType === 'exactInput' ? { exactInput: {} } : { exactOutput: {} },
           new BN(amount),
           new BN(otherAmountThreshold),
         )
@@ -1152,7 +1152,7 @@ export class TokenMillClient {
 
       const data = simulation.value.returnData;
       if (data) {
-        const {baseAmount, quoteAmount} = parseSwapAmounts(data);
+        const { baseAmount, quoteAmount } = parseSwapAmounts(data);
         console.log(
           `Swap amounts - baseAmount: ${baseAmount}, quoteAmount: ${quoteAmount}`,
         );
@@ -1161,7 +1161,7 @@ export class TokenMillClient {
       if (simulation.value.err) {
         throw new Error(`Transaction failed: ${simulation.value.err}`);
       }
-      return {success: true, simulation, message: 'Swap executed successfully'};
+      return { success: true, simulation, message: 'Swap executed successfully' };
     } catch (error: any) {
       console.error(error);
       throw new Error(`Failed to execute swap: ${error.message}`);
@@ -1169,12 +1169,12 @@ export class TokenMillClient {
   }
 
   async getAssetMetadata(assetId: string) {
-    if (!process.env.RPC_URL) {
-      throw new Error('RPC_URL is not set in environment variables.');
+    if (!process.env.EXPO_PUBLIC_RPC_URL) {
+      throw new Error('EXPO_PUBLIC_RPC_URL is not set in environment variables.');
     }
 
     // Check if we're using the public Solana RPC URL which doesn't support getAsset
-    if (process.env.RPC_URL === 'https://api.devnet.solana.com') {
+    if (process.env.EXPO_PUBLIC_RPC_URL === 'https://api.devnet.solana.com') {
       console.log('Using public Solana RPC that does not support getAsset. Returning mock data.');
       return {
         result: {
@@ -1190,11 +1190,11 @@ export class TokenMillClient {
     }
 
     try {
-      const response = await axios.post(process.env.RPC_URL, {
+      const response = await axios.post(process.env.EXPO_PUBLIC_RPC_URL, {
         jsonrpc: '2.0',
         id: '1',
         method: 'getAsset',
-        params: {id: assetId},
+        params: { id: assetId },
       });
 
       if (response.data.error?.message?.includes('Asset Not Found')) {
@@ -1209,7 +1209,7 @@ export class TokenMillClient {
       );
       throw new Error(
         error.response?.data?.error?.message ||
-          'Failed to fetch asset metadata.',
+        'Failed to fetch asset metadata.',
       );
     }
   }

@@ -238,8 +238,8 @@ This project consists of two main parts:
    CLUSTER=mainnet-beta
 
    # Authentication
-   PRIVY_APP_ID=your_privy_app_id
-   PRIVY_CLIENT_ID=your_privy_client_id
+   EXPO_PUBLIC_PRIVY_APP_ID=your_privy_app_id
+   EXPO_PUBLIC_PRIVY_CLIENT_ID=your_privy_client_id
    DYNAMIC_ENVIRONMENT_ID=your_dynamic_env_id
 
    # Turnkey wallet
@@ -251,14 +251,14 @@ This project consists of two main parts:
    TURNKEY_API_PRIVATE_KEY=your_turnkey_private_key
 
    # APIs
-   HELIUS_API_KEY=your_helius_api_key
+   EXPO_PUBLIC_HELIUS_API_KEY=your_helius_api_key
    HELIUS_RPC_CLUSTER=mainnet
    HELIUS_STAKED_URL=your_helius_staked_url
    HELIUS_STAKED_API_KEY=your_helius_staked_api_key
-   SERVER_URL=your_server_url
+   EXPO_PUBLIC_SERVER_URL=your_server_url
    TENSOR_API_KEY=your_tensor_api_key
-   COINGECKO_API_KEY=your_coingecko_api_key
-   BIRDEYE_API_KEY=your_birdeye_api_key
+   EXPO_PUBLIC_COINGECKO_API_KEY=your_coingecko_api_key
+   EXPO_PUBLIC_BIRDEYE_API_KEY=your_birdeye_api_key
    COIN_MARKE_CAPAPI_KEY=your_coinmarketcap_api_key
    OPENAI_API_KEY=your_openai_api_key
    COMMISSION_WALLET=your_commission_wallet_address
@@ -288,7 +288,7 @@ This project consists of two main parts:
 
    ```
    WALLET_PRIVATE_KEY=your_wallet_private_key
-   RPC_URL=your_helius_rpc_url
+   EXPO_PUBLIC_RPC_URL=your_helius_rpc_url
    TOKEN_MILL_PROGRAMID=your_token_mill_program_id
    TOKEN_MILL_CONFIG_PDA=your_token_mill_config_pda
    SWAP_AUTHORITY_KEY=your_swap_authority_key

@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
-import { SERVER_URL } from '@env';
+import { EXPO_PUBLIC_SERVER_URL } from '@env';
 
 // Types
 export interface ChatParticipant {
@@ -72,7 +72,7 @@ export const fetchUserChats = createAsyncThunk(
   'chat/fetchUserChats',
   async (userId: string, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${SERVER_URL}/api/chat/users/${userId}/chats`);
+      const response = await axios.get(`${EXPO_PUBLIC_SERVER_URL}/api/chat/users/${userId}/chats`);
       return response.data.chats;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || 'Failed to fetch chats');
@@ -82,14 +82,14 @@ export const fetchUserChats = createAsyncThunk(
 
 export const fetchChatMessages = createAsyncThunk(
   'chat/fetchChatMessages',
-  async ({ chatId, limit = 50, before = '', resetUnread = false }: { 
-    chatId: string; 
-    limit?: number; 
+  async ({ chatId, limit = 50, before = '', resetUnread = false }: {
+    chatId: string;
+    limit?: number;
     before?: string;
     resetUnread?: boolean;
   }, { rejectWithValue }) => {
     try {
-      const url = `${SERVER_URL}/api/chat/chats/${chatId}/messages${before ? `?before=${before}&limit=${limit}` : `?limit=${limit}`}`;
+      const url = `${EXPO_PUBLIC_SERVER_URL}/api/chat/chats/${chatId}/messages${before ? `?before=${before}&limit=${limit}` : `?limit=${limit}`}`;
       const response = await axios.get(url);
       return { chatId, messages: response.data.messages, resetUnread };
     } catch (error: any) {
@@ -100,21 +100,21 @@ export const fetchChatMessages = createAsyncThunk(
 
 export const sendMessage = createAsyncThunk(
   'chat/sendMessage',
-  async ({ 
-    chatId, 
-    userId, 
-    content, 
+  async ({
+    chatId,
+    userId,
+    content,
     imageUrl,
-    additionalData 
-  }: { 
-    chatId: string; 
-    userId: string; 
-    content: string; 
+    additionalData
+  }: {
+    chatId: string;
+    userId: string;
+    content: string;
     imageUrl?: string;
-    additionalData?: any 
+    additionalData?: any
   }, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${SERVER_URL}/api/chat/messages`, {
+      const response = await axios.post(`${EXPO_PUBLIC_SERVER_URL}/api/chat/messages`, {
         chatId,
         userId,
         content,
@@ -132,7 +132,7 @@ export const createDirectChat = createAsyncThunk(
   'chat/createDirectChat',
   async ({ userId, otherUserId }: { userId: string; otherUserId: string }, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${SERVER_URL}/api/chat/direct`, {
+      const response = await axios.post(`${EXPO_PUBLIC_SERVER_URL}/api/chat/direct`, {
         userId,
         otherUserId,
       });
@@ -147,7 +147,7 @@ export const createGroupChat = createAsyncThunk(
   'chat/createGroupChat',
   async ({ name, userId, participantIds }: { name: string; userId: string; participantIds: string[] }, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${SERVER_URL}/api/chat/group`, {
+      const response = await axios.post(`${EXPO_PUBLIC_SERVER_URL}/api/chat/group`, {
         name,
         userId,
         participantIds,
@@ -163,16 +163,16 @@ export const fetchUsersForChat = createAsyncThunk(
   'chat/fetchUsersForChat',
   async ({ query, userId }: { query?: string; userId?: string }, { rejectWithValue }) => {
     try {
-      let url = `${SERVER_URL}/api/chat/users`;
+      let url = `${EXPO_PUBLIC_SERVER_URL}/api/chat/users`;
       const params = [];
-      
+
       if (query) params.push(`query=${encodeURIComponent(query)}`);
       if (userId) params.push(`userId=${encodeURIComponent(userId)}`);
-      
+
       if (params.length > 0) {
         url += `?${params.join('&')}`;
       }
-      
+
       const response = await axios.get(url);
       return response.data.users;
     } catch (error: any) {
@@ -183,18 +183,18 @@ export const fetchUsersForChat = createAsyncThunk(
 
 export const editMessage = createAsyncThunk(
   'chat/editMessage',
-  async ({ 
-    messageId, 
-    userId, 
-    content 
-  }: { 
-    messageId: string; 
-    userId: string; 
-    content: string; 
+  async ({
+    messageId,
+    userId,
+    content
+  }: {
+    messageId: string;
+    userId: string;
+    content: string;
   }, { rejectWithValue }) => {
     console.log(`[Thunk editMessage] Editing message ${messageId} for user ${userId}`);
     try {
-      const response = await axios.put(`${SERVER_URL}/api/chat/messages/${messageId}`, {
+      const response = await axios.put(`${EXPO_PUBLIC_SERVER_URL}/api/chat/messages/${messageId}`, {
         userId,
         content,
       });
@@ -210,16 +210,16 @@ export const editMessage = createAsyncThunk(
 
 export const deleteMessage = createAsyncThunk(
   'chat/deleteMessage',
-  async ({ 
-    messageId, 
-    userId 
-  }: { 
-    messageId: string; 
-    userId: string; 
+  async ({
+    messageId,
+    userId
+  }: {
+    messageId: string;
+    userId: string;
   }, { rejectWithValue }) => {
     console.log(`[Thunk deleteMessage] Deleting message ${messageId} for user ${userId}`);
     try {
-      const response = await axios.delete(`${SERVER_URL}/api/chat/messages/${messageId}`, {
+      const response = await axios.delete(`${EXPO_PUBLIC_SERVER_URL}/api/chat/messages/${messageId}`, {
         data: { userId } // For DELETE requests, data needs to be passed as { data: ... }
       });
       console.log(`[Thunk deleteMessage] Success:`, response.data);
@@ -255,7 +255,7 @@ const chatSlice = createSlice({
   reducers: {
     setSelectedChat: (state, action) => {
       state.selectedChatId = action.payload;
-      
+
       // Reset unread count for the selected chat
       if (action.payload) {
         const chatIndex = state.chats.findIndex(chat => chat.id === action.payload);
@@ -271,7 +271,7 @@ const chatSlice = createSlice({
       } else {
         state.messages[message.chat_room_id] = [message];
       }
-      
+
       // Update last message in chat list
       const chatIndex = state.chats.findIndex(chat => chat.id === message.chat_room_id);
       if (chatIndex !== -1) {
@@ -281,17 +281,17 @@ const chatSlice = createSlice({
     incrementUnreadCount: (state, action) => {
       const { chatId, senderId } = action.payload;
       const chatIndex = state.chats.findIndex(chat => chat.id === chatId);
-      
+
       // Only increment if we found the chat and it's not currently selected
       if (chatIndex !== -1 && state.selectedChatId !== chatId) {
         // Initialize to 0 if undefined
         if (state.chats[chatIndex].unreadCount === undefined) {
           state.chats[chatIndex].unreadCount = 0;
         }
-        
+
         // Increment the unread count
         state.chats[chatIndex].unreadCount += 1;
-        
+
         // Move this chat to the top of the list (most recent)
         const updatedChat = state.chats[chatIndex];
         state.chats.splice(chatIndex, 1); // Remove chat from current position
@@ -317,7 +317,7 @@ const chatSlice = createSlice({
         state.loadingChats = false;
         state.error = action.payload as string;
       })
-      
+
     // Fetch chat messages
     builder
       .addCase(fetchChatMessages.pending, (state) => {
@@ -328,7 +328,7 @@ const chatSlice = createSlice({
         state.loadingMessages = false;
         const { chatId, messages, resetUnread } = action.payload;
         state.messages[chatId] = messages;
-        
+
         if (resetUnread) {
           const chatIndex = state.chats.findIndex(chat => chat.id === chatId);
           if (chatIndex !== -1) {
@@ -340,7 +340,7 @@ const chatSlice = createSlice({
         state.loadingMessages = false;
         state.error = action.payload as string;
       })
-      
+
     // Send message
     builder
       .addCase(sendMessage.fulfilled, (state, action) => {
@@ -350,14 +350,14 @@ const chatSlice = createSlice({
         } else {
           state.messages[message.chat_room_id] = [message];
         }
-        
+
         // Update last message in chat list
         const chatIndex = state.chats.findIndex(chat => chat.id === message.chat_room_id);
         if (chatIndex !== -1) {
           state.chats[chatIndex].lastMessage = message;
         }
       })
-      
+
     // Fetch users for chat
     builder
       .addCase(fetchUsersForChat.pending, (state) => {
@@ -371,42 +371,42 @@ const chatSlice = createSlice({
         state.loadingUsers = false;
         state.error = action.payload as string;
       });
-    
+
     // Edit message
     builder
       .addCase(editMessage.fulfilled, (state, action) => {
         const updatedMessage = action.payload;
         const chatId = updatedMessage.chat_room_id;
-        
+
         if (state.messages[chatId]) {
           // Find and update the message
           const messageIndex = state.messages[chatId].findIndex(
             msg => msg.id === updatedMessage.id
           );
-          
+
           if (messageIndex !== -1) {
             state.messages[chatId][messageIndex] = updatedMessage;
           }
-          
+
           // If this was the last message, update it in the chats list too
           const chatIndex = state.chats.findIndex(chat => chat.id === chatId);
-          if (chatIndex !== -1 && 
-              state.chats[chatIndex].lastMessage && 
-              state.chats[chatIndex].lastMessage.id === updatedMessage.id) {
+          if (chatIndex !== -1 &&
+            state.chats[chatIndex].lastMessage &&
+            state.chats[chatIndex].lastMessage.id === updatedMessage.id) {
             state.chats[chatIndex].lastMessage = updatedMessage;
           }
         }
       })
-      
+
     // Delete message
     builder
       .addCase(deleteMessage.fulfilled, (state, action) => {
         const { messageId, chatId } = action.payload;
-        
+
         if (state.messages[chatId]) {
           // Option 1: Remove the message completely
           // state.messages[chatId] = state.messages[chatId].filter(msg => msg.id !== messageId);
-          
+
           // Option 2: Update the message content to show it's been deleted
           const messageIndex = state.messages[chatId].findIndex(msg => msg.id === messageId);
           if (messageIndex !== -1) {
@@ -416,24 +416,24 @@ const chatSlice = createSlice({
               is_deleted: true
             };
           }
-          
+
           // If this was the last message, update it in the chats list too
           const chatIndex = state.chats.findIndex(chat => chat.id === chatId);
-          if (chatIndex !== -1 && 
-              state.chats[chatIndex].lastMessage && 
-              state.chats[chatIndex].lastMessage.id === messageId) {
+          if (chatIndex !== -1 &&
+            state.chats[chatIndex].lastMessage &&
+            state.chats[chatIndex].lastMessage.id === messageId) {
             if (messageIndex !== -1) {
               state.chats[chatIndex].lastMessage = state.messages[chatId][messageIndex];
             }
           }
         }
       });
-    
+
     // Update user online status
     builder.addCase(updateUserOnlineStatus.fulfilled, (state, action) => {
       const { userId, isOnline } = action.payload;
       state.onlineUsers[userId] = isOnline;
-      
+
       // Also update the is_active property on participants
       state.chats.forEach(chat => {
         if (chat.participants) {

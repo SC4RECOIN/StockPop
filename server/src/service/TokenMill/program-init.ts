@@ -39,7 +39,7 @@ class TokenMillClient {
   constructor() {
     try {
       this.connection = new Connection(
-        process.env.RPC_URL || 'https://api.devnet.solana.com',
+        process.env.EXPO_PUBLIC_RPC_URL || 'https://api.devnet.solana.com',
         'confirmed'
       );
 
@@ -58,9 +58,9 @@ class TokenMillClient {
 
       const idl = loadIDLFromJson();
       const programId = new PublicKey(process.env.PROGRAM_ID || 'JoeaRXgtME3jAoz5WuFXGEndfv4NPH9nBxsLq44hk9J');
-      
+
       this.program = new anchor.Program(idl, provider);
-      
+
       console.log('TokenMill program initialized successfully');
     } catch (error) {
       console.error('Error initializing TokenMill client:', error);

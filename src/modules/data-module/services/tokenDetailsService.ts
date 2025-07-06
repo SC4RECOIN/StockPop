@@ -1,5 +1,5 @@
-import { BIRDEYE_API_KEY } from '@env';
-import { 
+import { EXPO_PUBLIC_BIRDEYE_API_KEY } from '@env';
+import {
     BirdEyeHistoryResponse,
     PriceHistoryItem,
     TimeframeParams,
@@ -15,7 +15,7 @@ const BIRDEYE_BASE_URL = 'https://public-api.birdeye.so';
 const BIRDEYE_HEADERS = {
     'accept': 'application/json',
     'x-chain': 'solana',
-    'X-API-KEY': BIRDEYE_API_KEY
+    'X-API-KEY': EXPO_PUBLIC_BIRDEYE_API_KEY
 };
 
 export function getBirdeyeTimeParams(timeframe: Timeframe): TimeframeParams {
@@ -54,13 +54,13 @@ export function getBirdeyeTimeParams(timeframe: Timeframe): TimeframeParams {
 }
 
 export async function fetchPriceHistory(
-    tokenAddress: string, 
+    tokenAddress: string,
     timeframe: Timeframe
 ): Promise<PriceHistoryItem[]> {
     try {
         const birdeyeParams = getBirdeyeTimeParams(timeframe);
         const birdeyeUrl = `${BIRDEYE_BASE_URL}/defi/history_price?address=${tokenAddress}&address_type=token&type=${birdeyeParams.type}&time_from=${birdeyeParams.time_from}&time_to=${birdeyeParams.time_to}`;
-        
+
         const birdeyeResponse = await fetch(birdeyeUrl, {
             method: 'GET',
             headers: BIRDEYE_HEADERS

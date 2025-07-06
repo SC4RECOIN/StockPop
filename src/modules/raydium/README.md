@@ -73,11 +73,11 @@ src/modules/raydium/
 
 This module relies on environment variables, typically managed via an `.env` file:
 
--   `SERVER_URL`: The base URL for the backend server that handles:
-    -   Raydium Launchpad metadata uploads (e.g., `${SERVER_URL}/api/raydium/launchpad/uploadMetadata`)
-    -   Raydium Launchpad token creation (e.g., `${SERVER_URL}/api/raydium/launchpad/create`)
-    -   Raydium swap transactions (e.g., `${SERVER_URL}/api/raydium/swap`)
--   `HELIUS_STAKED_URL` (or `RPC_URL`): The Solana RPC endpoint used for on-chain interactions if not handled by the backend.
+-   `EXPO_PUBLIC_SERVER_URL`: The base URL for the backend server that handles:
+    -   Raydium Launchpad metadata uploads (e.g., `${EXPO_PUBLIC_SERVER_URL}/api/raydium/launchpad/uploadMetadata`)
+    -   Raydium Launchpad token creation (e.g., `${EXPO_PUBLIC_SERVER_URL}/api/raydium/launchpad/create`)
+    -   Raydium swap transactions (e.g., `${EXPO_PUBLIC_SERVER_URL}/api/raydium/swap`)
+-   `HELIUS_STAKED_URL` (or `EXPO_PUBLIC_RPC_URL`): The Solana RPC endpoint used for on-chain interactions if not handled by the backend.
 -   `CLUSTER`: The Solana cluster (e.g., `mainnet-beta`, `devnet`).
 
 ## Usage Example

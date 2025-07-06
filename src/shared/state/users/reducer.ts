@@ -3,13 +3,13 @@
  ***************************************************/
 
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { SERVER_URL } from '@env';
+import { EXPO_PUBLIC_SERVER_URL } from '@env';
 
 // For local fallback
-const SERVER_BASE_URL = SERVER_URL || 'http://localhost:3000';
+const SERVER_BASE_URL = EXPO_PUBLIC_SERVER_URL || 'http://localhost:3000';
 
 // Debug environment variable loading
-console.log('[Users Reducer] SERVER_URL from @env:', SERVER_URL);
+console.log('[Users Reducer] EXPO_PUBLIC_SERVER_URL from @env:', EXPO_PUBLIC_SERVER_URL);
 console.log('[Users Reducer] SERVER_BASE_URL resolved to:', SERVER_BASE_URL);
 
 export interface UserProfile {

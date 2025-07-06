@@ -5,7 +5,7 @@ import {
   BirdeyeSwapTransaction,
   BirdeyeSwapResponse,
 } from '../components/trade/ShareTradeModal.types';
-import { BIRDEYE_API_KEY } from '@env';
+import { EXPO_PUBLIC_BIRDEYE_API_KEY } from '@env';
 
 /**
  * Validates a converted swap transaction
@@ -148,7 +148,7 @@ const fetchSwapsWithBirdeyeInternal = async (
     throw new Error('Wallet address is required');
   }
 
-  if (!BIRDEYE_API_KEY) {
+  if (!EXPO_PUBLIC_BIRDEYE_API_KEY) {
     console.error('[usePastSwaps] Birdeye API key is missing');
     throw new Error('Birdeye API key is missing. Please check your environment variables.');
   }
@@ -165,7 +165,7 @@ const fetchSwapsWithBirdeyeInternal = async (
       headers: {
         accept: 'application/json',
         'x-chain': 'solana',
-        'x-api-key': BIRDEYE_API_KEY,
+        'x-api-key': EXPO_PUBLIC_BIRDEYE_API_KEY,
       },
     });
 
@@ -185,7 +185,7 @@ const fetchSwapsWithBirdeyeInternal = async (
 
     // Convert and filter valid transactions
     const convertedSwaps: EnhancedSwapTransaction[] = [];
-    
+
     result.data.items.forEach((item, index) => {
       try {
         const converted = convertBirdeyeToSwapTransaction(item, index);
@@ -219,7 +219,7 @@ const groupRelatedSwapsInternal = (
   swaps.forEach(swap => {
     // Create a group key based on transaction hash or timestamp window
     let groupKey = swap.signature;
-    
+
     // If same transaction, group together
     if (groups.has(groupKey)) {
       groups.get(groupKey)!.push(swap);
@@ -256,19 +256,19 @@ const groupRelatedSwapsInternal = (
         // Extract instruction indices from uniqueId
         const aIndices = a.uniqueId?.split('-');
         const bIndices = b.uniqueId?.split('-');
-        
+
         if (aIndices && bIndices && aIndices.length >= 3 && bIndices.length >= 3) {
           const aInsIndex = parseInt(aIndices[1]) || 0;
           const bInsIndex = parseInt(bIndices[1]) || 0;
           const aInnerIndex = parseInt(aIndices[2]) || 0;
           const bInnerIndex = parseInt(bIndices[2]) || 0;
-          
+
           if (aInsIndex !== bInsIndex) {
             return aInsIndex - bInsIndex;
           }
           return aInnerIndex - bInnerIndex;
         }
-        
+
         // Fallback to timestamp
         return a.timestamp - b.timestamp;
       });
@@ -293,7 +293,7 @@ const groupRelatedSwapsInternal = (
 
   // Sort by timestamp (newest first)
   const finalSwaps = groupedSwaps.sort((a, b) => b.timestamp - a.timestamp);
-  
+
   return finalSwaps;
 };
 
@@ -329,8 +329,8 @@ export function usePastSwaps({ walletAddress, visible }: UsePastSwapsProps) {
       return;
     }
 
-    if (!BIRDEYE_API_KEY) {
-      console.error('[usePastSwaps] BIRDEYE_API_KEY is missing');
+    if (!EXPO_PUBLIC_BIRDEYE_API_KEY) {
+      console.error('[usePastSwaps] EXPO_PUBLIC_BIRDEYE_API_KEY is missing');
       setInitialLoading(false);
       setRefreshing(false);
       setApiError("API configuration error. Please contact support.");
@@ -342,7 +342,7 @@ export function usePastSwaps({ walletAddress, visible }: UsePastSwapsProps) {
     }
 
     isRefreshingRef.current = true;
-    
+
     if (!hasLoadedInitialDataRef.current && !isForceRefresh) {
       setInitialLoading(true);
       setRefreshing(false);
@@ -354,7 +354,7 @@ export function usePastSwaps({ walletAddress, visible }: UsePastSwapsProps) {
     try {
       const birdeyeSwaps = await fetchSwapsWithBirdeyeInternal(walletAddress);
       const groupedSwaps = groupRelatedSwapsInternal(birdeyeSwaps);
-      
+
       if (isMounted.current) {
         setSwaps(groupedSwaps);
       }

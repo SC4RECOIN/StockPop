@@ -7,9 +7,9 @@ import {
   SystemProgram,
   LAMPORTS_PER_SOL,
 } from '@solana/web3.js';
-import {Buffer} from 'buffer';
-import {SERVER_URL} from '@env';
-import {createSyncNativeInstruction} from '@solana/spl-token';
+import { Buffer } from 'buffer';
+import { EXPO_PUBLIC_SERVER_URL } from '@env';
+import { createSyncNativeInstruction } from '@solana/spl-token';
 import * as spl from '@solana/spl-token';
 import { PUBLIC_KEYS } from '@/shared/config/constants';
 import { TransactionService } from '@/modules/wallet-providers/services/transaction/transactionService';
@@ -61,7 +61,7 @@ export async function fundUserWithWSOL({
     const syncIx = createSyncNativeInstruction(userQuoteAta);
     tx.add(syncIx);
 
-    const {blockhash} = await connection.getLatestBlockhash();
+    const { blockhash } = await connection.getLatestBlockhash();
     tx.recentBlockhash = blockhash;
     tx.feePayer = userPubkey;
 
@@ -79,12 +79,12 @@ export async function fundUserWithWSOL({
     const signature = await TransactionService.signAndSendTransaction(
       { type: 'transaction', transaction: tx },
       solanaWallet,
-      { 
+      {
         connection,
         statusCallback: filteredCallback
       }
     );
-    
+
     onStatusUpdate?.('Transaction successful!');
     return signature;
   } catch (error) {
@@ -128,7 +128,7 @@ export async function createMarket({
 }> {
   try {
     onStatusUpdate?.('Preparing market creation...');
-    
+
     const body = {
       name: tokenName,
       symbol: tokenSymbol,
@@ -140,9 +140,9 @@ export async function createMarket({
     };
 
     onStatusUpdate?.('Requesting transaction from server...');
-    const resp = await fetch(`${SERVER_URL}/api/markets`, {
+    const resp = await fetch(`${EXPO_PUBLIC_SERVER_URL}/api/markets`, {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
     const json = await resp.json();
@@ -163,14 +163,14 @@ export async function createMarket({
     const txSignature = await TransactionService.signAndSendTransaction(
       { type: 'base64', data: json.transaction },
       solanaWallet,
-      { 
+      {
         connection,
         statusCallback: filteredCallback
       }
     );
 
     onStatusUpdate?.('Market created successfully!');
-    
+
     return {
       txSignature,
       marketAddress: json.marketAddress,
@@ -205,10 +205,10 @@ export async function stakeTokens({
 }): Promise<string> {
   try {
     onStatusUpdate?.('Preparing stake transaction...');
-    
-    const resp = await fetch(`${SERVER_URL}/api/stake`, {
+
+    const resp = await fetch(`${EXPO_PUBLIC_SERVER_URL}/api/stake`, {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         marketAddress,
         amount,
@@ -221,7 +221,7 @@ export async function stakeTokens({
     }
 
     onStatusUpdate?.('Transaction received, sending to wallet...');
-    
+
     // Create a filtered status callback that prevents error messages
     const filteredCallback = (status: string) => {
       if (!status.startsWith('Error:') && !status.includes('failed:')) {
@@ -234,12 +234,12 @@ export async function stakeTokens({
     const signature = await TransactionService.signAndSendTransaction(
       { type: 'base64', data: json.data },
       solanaWallet,
-      { 
+      {
         connection,
         statusCallback: filteredCallback
       }
     );
-    
+
     onStatusUpdate?.('Tokens staked successfully!');
     return signature;
   } catch (error) {
@@ -270,13 +270,13 @@ export async function createVesting({
   connection: Connection;
   solanaWallet: StandardWallet | any;
   onStatusUpdate?: (status: string) => void;
-}): Promise<{txSignature: string; ephemeralVestingPubkey: string}> {
+}): Promise<{ txSignature: string; ephemeralVestingPubkey: string }> {
   try {
     onStatusUpdate?.('Preparing vesting transaction...');
-    
-    const resp = await fetch(`${SERVER_URL}/api/vesting`, {
+
+    const resp = await fetch(`${EXPO_PUBLIC_SERVER_URL}/api/vesting`, {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         marketAddress,
         recipient: userPublicKey,
@@ -294,7 +294,7 @@ export async function createVesting({
     }
 
     onStatusUpdate?.('Transaction received, sending to wallet...');
-    
+
     // Create a filtered status callback that prevents error messages
     const filteredCallback = (status: string) => {
       if (!status.startsWith('Error:') && !status.includes('failed:')) {
@@ -307,14 +307,14 @@ export async function createVesting({
     const txSignature = await TransactionService.signAndSendTransaction(
       { type: 'base64', data: data.data.transaction },
       solanaWallet,
-      { 
+      {
         connection,
         statusCallback: filteredCallback
       }
     );
 
     onStatusUpdate?.('Vesting created successfully!');
-    
+
     return {
       txSignature,
       ephemeralVestingPubkey: data.data.ephemeralVestingPubkey,
@@ -350,10 +350,10 @@ export async function releaseVesting({
 }): Promise<string> {
   try {
     onStatusUpdate?.('Preparing vesting release...');
-    
-    const resp = await fetch(`${SERVER_URL}/api/vesting/release`, {
+
+    const resp = await fetch(`${EXPO_PUBLIC_SERVER_URL}/api/vesting/release`, {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         marketAddress,
         vestingPlanAddress,
@@ -367,7 +367,7 @@ export async function releaseVesting({
     }
 
     onStatusUpdate?.('Transaction received, sending to wallet...');
-    
+
     // Create a filtered status callback that prevents error messages
     const filteredCallback = (status: string) => {
       if (!status.startsWith('Error:') && !status.includes('failed:')) {
@@ -380,12 +380,12 @@ export async function releaseVesting({
     const signature = await TransactionService.signAndSendTransaction(
       { type: 'base64', data: data.data },
       solanaWallet,
-      { 
+      {
         connection,
         statusCallback: filteredCallback
       }
     );
-    
+
     onStatusUpdate?.('Vesting released successfully!');
     return signature;
   } catch (error) {
@@ -419,10 +419,10 @@ export async function swapTokens({
 }): Promise<string> {
   try {
     onStatusUpdate?.(`Preparing ${swapType} transaction...`);
-    
-    const resp = await fetch(`${SERVER_URL}/api/swap`, {
+
+    const resp = await fetch(`${EXPO_PUBLIC_SERVER_URL}/api/swap`, {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         market: marketAddress,
         quoteTokenMint: PUBLIC_KEYS.wSolMint,
@@ -439,7 +439,7 @@ export async function swapTokens({
     }
 
     onStatusUpdate?.('Transaction received, sending to wallet...');
-    
+
     // Create a filtered status callback that prevents error messages
     const filteredCallback = (status: string) => {
       if (!status.startsWith('Error:') && !status.includes('failed:')) {
@@ -452,12 +452,12 @@ export async function swapTokens({
     const signature = await TransactionService.signAndSendTransaction(
       { type: 'base64', data: data.transaction },
       solanaWallet,
-      { 
+      {
         connection,
         statusCallback: filteredCallback
       }
     );
-    
+
     onStatusUpdate?.('Swap completed successfully!');
     return signature;
   } catch (error) {
@@ -487,7 +487,7 @@ export async function fundMarket({
 }): Promise<string> {
   try {
     onStatusUpdate?.('Preparing market funding...');
-    
+
     const marketPubkey = new PublicKey(marketAddress);
     const quoteTokenMint = new PublicKey(PUBLIC_KEYS.wSolMint);
     const marketQuoteTokenAta = spl.getAssociatedTokenAddressSync(
@@ -521,12 +521,12 @@ export async function fundMarket({
     const syncIx = createSyncNativeInstruction(marketQuoteTokenAta);
     tx.add(syncIx);
 
-    const {blockhash} = await connection.getLatestBlockhash();
+    const { blockhash } = await connection.getLatestBlockhash();
     tx.recentBlockhash = blockhash;
     tx.feePayer = new PublicKey(userPublicKey);
 
     onStatusUpdate?.('Transaction created, sending to wallet...');
-    
+
     // Create a filtered status callback that prevents error messages
     const filteredCallback = (status: string) => {
       if (!status.startsWith('Error:') && !status.includes('failed:')) {
@@ -539,12 +539,12 @@ export async function fundMarket({
     const signature = await TransactionService.signAndSendTransaction(
       { type: 'transaction', transaction: tx },
       solanaWallet,
-      { 
+      {
         connection,
         statusCallback: filteredCallback
       }
     );
-    
+
     onStatusUpdate?.('Market funded successfully!');
     return signature;
   } catch (error) {
@@ -578,7 +578,7 @@ export async function setBondingCurve({
 }): Promise<string> {
   try {
     onStatusUpdate?.('Preparing bonding curve setup...');
-    
+
     const body = {
       market: marketAddress,
       userPublicKey,
@@ -586,9 +586,9 @@ export async function setBondingCurve({
       bidPrices,
     };
 
-    const resp = await fetch(`${SERVER_URL}/api/set-curve`, {
+    const resp = await fetch(`${EXPO_PUBLIC_SERVER_URL}/api/set-curve`, {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
     const json = await resp.json();
@@ -597,7 +597,7 @@ export async function setBondingCurve({
     }
 
     onStatusUpdate?.('Transaction received, sending to wallet...');
-    
+
     // Create a filtered status callback that prevents error messages
     const filteredCallback = (status: string) => {
       if (!status.startsWith('Error:') && !status.includes('failed:')) {
@@ -610,12 +610,12 @@ export async function setBondingCurve({
     const signature = await TransactionService.signAndSendTransaction(
       { type: 'base64', data: json.transaction },
       solanaWallet,
-      { 
+      {
         connection,
         statusCallback: filteredCallback
       }
     );
-    
+
     onStatusUpdate?.('Bonding curve set successfully!');
     return signature;
   } catch (error) {

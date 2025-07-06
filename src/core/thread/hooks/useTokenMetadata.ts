@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { BIRDEYE_API_KEY } from '@env';
+import { EXPO_PUBLIC_BIRDEYE_API_KEY } from '@env';
 
 interface TokenMetadata {
   address: string;
@@ -37,7 +37,7 @@ const tokenMetadataCache = new Map<string, TokenMetadata>();
  * Fetches token metadata from Birdeye API for multiple addresses
  */
 const fetchTokenMetadata = async (addresses: string[]): Promise<Map<string, TokenMetadata>> => {
-  if (!BIRDEYE_API_KEY) {
+  if (!EXPO_PUBLIC_BIRDEYE_API_KEY) {
     throw new Error('Birdeye API key is missing');
   }
 
@@ -47,7 +47,7 @@ const fetchTokenMetadata = async (addresses: string[]): Promise<Map<string, Toke
 
   // Filter out addresses we already have in cache
   const addressesToFetch = addresses.filter(addr => !tokenMetadataCache.has(addr));
-  
+
   if (addressesToFetch.length === 0) {
     const result = new Map<string, TokenMetadata>();
     addresses.forEach(addr => {
@@ -75,7 +75,7 @@ const fetchTokenMetadata = async (addresses: string[]): Promise<Map<string, Toke
         headers: {
           accept: 'application/json',
           'x-chain': 'solana',
-          'x-api-key': BIRDEYE_API_KEY,
+          'x-api-key': EXPO_PUBLIC_BIRDEYE_API_KEY,
         },
       });
 
@@ -131,7 +131,7 @@ const fetchTokenMetadata = async (addresses: string[]): Promise<Map<string, Toke
       const cached = tokenMetadataCache.get(addr);
       if (cached) fallbackResults.set(addr, cached);
     });
-    
+
     return fallbackResults;
   }
 };
@@ -177,7 +177,7 @@ export function useTokenMetadata(): UseTokenMetadataReturn {
 
     try {
       const fetchedMetadata = await fetchTokenMetadata(newAddresses);
-      
+
       if (isMounted.current) {
         // Update the local state with new metadata
         setTokenMetadata(new Map(tokenMetadataCache));
@@ -189,7 +189,7 @@ export function useTokenMetadata(): UseTokenMetadataReturn {
     } finally {
       // Remove addresses from fetching set
       newAddresses.forEach(addr => fetchingRef.current.delete(addr));
-      
+
       if (isMounted.current) {
         setLoading(false);
       }

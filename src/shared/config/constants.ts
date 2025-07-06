@@ -1,18 +1,18 @@
 import {
-  HELIUS_API_KEY,
-  SERVER_URL,
+  EXPO_PUBLIC_HELIUS_API_KEY,
+  EXPO_PUBLIC_SERVER_URL,
   CLUSTER,
   HELIUS_RPC_CLUSTER,
-  // Other env values (e.g. PRIVY_APP_ID, etc.) can be imported as needed.
+  // Other env values (e.g. EXPO_PUBLIC_PRIVY_APP_ID, etc.) can be imported as needed.
 } from '@env';
 
 export const ENDPOINTS = {
-  // Use the SERVER_URL from env
-  serverBase: SERVER_URL,
-  // Jupiter endpoints – these default values can be overridden by changing SERVER_URL if needed.
+  // Use the EXPO_PUBLIC_SERVER_URL from env
+  serverBase: EXPO_PUBLIC_SERVER_URL,
+  // Jupiter endpoints – these default values can be overridden by changing EXPO_PUBLIC_SERVER_URL if needed.
   jupiter: {
     quote: 'https://api.jup.ag/swap/v1/quote',
-    swap: SERVER_URL + '/api/jupiter/swap',
+    swap: EXPO_PUBLIC_SERVER_URL + '/api/jupiter/swap',
   },
   // Raydium endpoints
   raydium: {
@@ -24,7 +24,7 @@ export const ENDPOINTS = {
     blockEngine: 'https://mainnet.block-engine.jito.wtf:443/api/v1/bundles',
   },
   // Helius RPC endpoint from env
-  helius: `https://${HELIUS_RPC_CLUSTER}.helius-rpc.com/?api-key=${HELIUS_API_KEY}`,
+  helius: `https://${HELIUS_RPC_CLUSTER}.helius-rpc.com/?api-key=${EXPO_PUBLIC_HELIUS_API_KEY}`,
   tensorFlowBaseUrl: 'https://api.mainnet.tensordev.io',
 };
 

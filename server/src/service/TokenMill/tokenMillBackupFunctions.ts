@@ -15,7 +15,7 @@ import {
   TokenMillResponse,
   SwapParams,
 } from '../../types/interfaces';
-import {TokenMillType} from './idl/token_mill';
+import { TokenMillType } from './idl/token_mill';
 import {
   TOKEN_PROGRAM_ID,
   getAssociatedTokenAddressSync,
@@ -34,7 +34,7 @@ export class TokenMillClientBackup {
   config: PublicKey = new PublicKey(process.env.TOKEN_MILL_CONFIG_PDA!);
 
   constructor() {
-    this.connection = new Connection(process.env.RPC_URL!);
+    this.connection = new Connection(process.env.EXPO_PUBLIC_RPC_URL!);
     const privateKey = bs58.decode(process.env.WALLET_PRIVATE_KEY!);
     this.wallet = Keypair.fromSecretKey(privateKey);
     const provider = new anchor.AnchorProvider(
@@ -90,7 +90,7 @@ export class TokenMillClientBackup {
    * Creates a market using the TokenMill program.
    */
   async createMarket(params: any) {
-    const {name, symbol, uri, totalSupply, creatorFeeShare, stakingFeeShare} =
+    const { name, symbol, uri, totalSupply, creatorFeeShare, stakingFeeShare } =
       params;
     console.log('Wallet:', this.wallet.publicKey.toString());
     const quoteTokenMint = new PublicKey(
@@ -269,7 +269,7 @@ export class TokenMillClientBackup {
    */
   async stake(
     params: StakingParams,
-  ): Promise<TokenMillResponse<{signature: string}>> {
+  ): Promise<TokenMillResponse<{ signature: string }>> {
     try {
       const marketPubkey = new PublicKey(params.marketAddress);
       const market = await this.program.account.market.fetch(marketPubkey);
@@ -291,7 +291,7 @@ export class TokenMillClientBackup {
 
       return {
         success: true,
-        data: {signature: tx},
+        data: { signature: tx },
       };
     } catch (error) {
       return {
@@ -319,7 +319,7 @@ export class TokenMillClientBackup {
    */
   async createVesting(
     params: VestingParams,
-  ): Promise<TokenMillResponse<{vestingAccount: string; signature: string}>> {
+  ): Promise<TokenMillResponse<{ vestingAccount: string; signature: string }>> {
     try {
       const marketPubkey = new PublicKey(params.marketAddress);
       const recipientPubkey = new PublicKey(params.recipient);
@@ -368,7 +368,7 @@ export class TokenMillClientBackup {
           this.wallet,
           baseTokenMint,
           this.wallet.publicKey,
-          {commitment: 'confirmed'},
+          { commitment: 'confirmed' },
           spl.TOKEN_2022_PROGRAM_ID,
           spl.ASSOCIATED_TOKEN_PROGRAM_ID,
           true,
@@ -510,7 +510,7 @@ export class TokenMillClientBackup {
     stakePositionAddress: string;
     vestingPlanAddress: string;
     baseTokenMint: string;
-  }): Promise<TokenMillResponse<{signature: string}>> {
+  }): Promise<TokenMillResponse<{ signature: string }>> {
     try {
       const marketPubkey = new PublicKey(params.marketAddress);
       const baseTokenMintPubkey = new PublicKey(params.baseTokenMint);
@@ -559,7 +559,7 @@ export class TokenMillClientBackup {
         throw new Error(`Release failed: ${confirmation.value.err}`);
       }
 
-      return {success: true, data: {signature: transactionSignature}};
+      return { success: true, data: { signature: transactionSignature } };
     } catch (error: any) {
       return {
         success: false,
@@ -690,8 +690,8 @@ export class TokenMillClientBackup {
         );
         const transaction = await this.program.methods
           .permissionedSwap(
-            action === 'buy' ? {buy: {}} : {sell: {}},
-            tradeType === 'exactInput' ? {exactInput: {}} : {exactOutput: {}},
+            action === 'buy' ? { buy: {} } : { sell: {} },
+            tradeType === 'exactInput' ? { exactInput: {} } : { exactOutput: {} },
             new BN(amount),
             new BN(otherAmountThreshold),
           )
@@ -755,8 +755,8 @@ export class TokenMillClientBackup {
         console.log('Market Free');
         const freetransaction = await this.program.methods
           .permissionedSwap(
-            action === 'buy' ? {buy: {}} : {sell: {}},
-            tradeType === 'exactInput' ? {exactInput: {}} : {exactOutput: {}},
+            action === 'buy' ? { buy: {} } : { sell: {} },
+            tradeType === 'exactInput' ? { exactInput: {} } : { exactOutput: {} },
             new BN(amount),
             new BN(otherAmountThreshold),
           )

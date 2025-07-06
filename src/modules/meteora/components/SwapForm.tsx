@@ -17,7 +17,7 @@ import TYPOGRAPHY from '@/assets/typography';
 import { executeTrade, fetchSwapQuote } from '../services/meteoraService';
 import { MeteoraTrade } from '../types';
 import { useWallet } from '@/modules/wallet-providers/hooks/useWallet';
-import { SERVER_URL } from '@env';
+import { EXPO_PUBLIC_SERVER_URL } from '@env';
 import {
     TokenInfo,
     DEFAULT_SOL_TOKEN,
@@ -106,7 +106,7 @@ export default function SwapForm({
             setError('');
             setStatusMessage('Checking available pools...');
 
-            const response = await fetch(`${SERVER_URL}/api/meteora/available-pools?token=${inputTokenAddress.trim()}`);
+            const response = await fetch(`${EXPO_PUBLIC_SERVER_URL}/api/meteora/available-pools?token=${inputTokenAddress.trim()}`);
             const data = await response.json();
 
             if (data.success && data.pools && data.pools.length > 0) {
@@ -181,7 +181,7 @@ export default function SwapForm({
             setIsLoading(true);
 
             // Build the URL with the pool address if available
-            let url = `${SERVER_URL}/api/meteora/quote?inputToken=${fromToken}&outputToken=${toToken}&amount=${amountValue}&slippage=${slippage}`;
+            let url = `${EXPO_PUBLIC_SERVER_URL}/api/meteora/quote?inputToken=${fromToken}&outputToken=${toToken}&amount=${amountValue}&slippage=${slippage}`;
 
             if (selectedPool) {
                 url += `&poolAddress=${selectedPool.address}`;
@@ -301,7 +301,7 @@ export default function SwapForm({
             setStatusMessage('Fetching quote...');
 
             // Build the URL with the selected pool
-            let url = `${SERVER_URL}/api/meteora/quote?inputToken=${inputTokenAddress}&outputToken=${outputToken.address}&amount=${amount}&slippage=${slippage}&poolAddress=${selectedPool.address}`;
+            let url = `${EXPO_PUBLIC_SERVER_URL}/api/meteora/quote?inputToken=${inputTokenAddress}&outputToken=${outputToken.address}&amount=${amount}&slippage=${slippage}&poolAddress=${selectedPool.address}`;
 
             // Call the API directly with our custom URL
             const response = await fetch(url);

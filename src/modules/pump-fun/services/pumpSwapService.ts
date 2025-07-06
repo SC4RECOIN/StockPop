@@ -5,10 +5,10 @@
  */
 
 import { PublicKey, Connection } from '@solana/web3.js';
-import { 
-  SwapParams as OriginalSwapParams, 
-  AddLiquidityParams, 
-  RemoveLiquidityParams, 
+import {
+  SwapParams as OriginalSwapParams,
+  AddLiquidityParams,
+  RemoveLiquidityParams,
   CreatePoolParams
 } from '../types';
 import { TransactionService } from '../../wallet-providers/services/transaction/transactionService';
@@ -20,14 +20,14 @@ export enum Direction {
   BaseToQuote = 1
 }
 
-import {SERVER_URL} from '@env';
+import { EXPO_PUBLIC_SERVER_URL } from '@env';
 
 // Modify SwapParams to accept both local Direction and SDK Direction
 export interface SwapParams extends Omit<OriginalSwapParams, 'direction'> {
   direction: Direction | number;
 }
 
-const API_BASE_URL = SERVER_URL;
+const API_BASE_URL = EXPO_PUBLIC_SERVER_URL;
 console.log('[pumpSwapService] Top level: API_BASE_URL =', API_BASE_URL); // Log immediately
 
 /**
@@ -51,31 +51,31 @@ export async function createPool({
   try {
     onStatusUpdate?.('Starting pool creation process...');
     onStatusUpdate?.('Validating token addresses and amounts...');
-    
+
     // Basic validation for display purposes
     if (!baseMint || !quoteMint) {
       throw new Error('Invalid token mint addresses');
     }
-    
+
     if (baseAmount <= 0 || quoteAmount <= 0) {
       throw new Error('Token amounts must be greater than zero');
     }
-    
+
     if (baseMint === quoteMint) {
       throw new Error('Base and quote tokens cannot be the same');
     }
-    
+
     // Identify if any of the tokens are SOL, which requires special handling
     const isBaseSol = baseMint === 'So11111111111111111111111111111111111111112';
     const isQuoteSol = quoteMint === 'So11111111111111111111111111111111111111112';
-    
+
     console.log(`Creating pool: baseMint=${baseMint} (${isBaseSol ? 'SOL' : 'SPL'}), quoteMint=${quoteMint} (${isQuoteSol ? 'SOL' : 'SPL'})`);
     console.log(`Amounts: base=${baseAmount}, quote=${quoteAmount}`);
-    
+
     onStatusUpdate?.(`Creating pool with ${isBaseSol ? 'SOL' : 'SPL'} and ${isQuoteSol ? 'SOL' : 'SPL'}...`);
-    
+
     onStatusUpdate?.('Requesting transaction from server...');
-    
+
     const response = await fetch(`${API_BASE_URL}/api/pump-swap/build-create-pool`, {
       method: 'POST',
       headers: {
@@ -95,21 +95,21 @@ export async function createPool({
     if (!data.success) {
       const serverError = data.error || 'Failed to create pool';
       console.error('Server error:', serverError);
-      
+
       // If server provided detailed error, show it
       if (data.details) {
         console.error('Error details:', data.details);
       }
-      
+
       throw new Error(serverError);
     }
-    
+
     if (!data.data || !data.data.transaction) {
       throw new Error('Server returned invalid transaction data');
     }
 
     onStatusUpdate?.('Transaction received. Sending to wallet for approval...');
-    
+
     // Create a filtered status callback that prevents error messages
     const filteredCallback = (status: string) => {
       if (!status.startsWith('Error:') && !status.includes('failed:')) {
@@ -120,40 +120,40 @@ export async function createPool({
     };
 
     onStatusUpdate?.('Waiting for transaction approval and confirmation...');
-    
+
     try {
       onStatusUpdate?.('Sending transaction to network...');
       console.log('Sending transaction to network...');
-      
+
       const signature = await TransactionService.signAndSendTransaction(
         { type: 'base64', data: data.data.transaction },
         solanaWallet,
-        { 
+        {
           connection,
           statusCallback: filteredCallback
         }
       );
-      
+
       onStatusUpdate?.(`Pool created successfully! Tx: ${signature.slice(0, 8)}...${signature.slice(-8)}`);
       return signature;
     } catch (txError) {
       console.error('Transaction Error:', txError);
-      
+
       // Log detailed error for debugging
       console.log('==== Transaction Error Details ====');
       const txErrorMsg = txError instanceof Error ? txError.message : String(txError);
       console.log('Error message:', txErrorMsg);
-      
+
       // Check for specific error patterns to provide better feedback
-      const isInsufficientFunds = 
-        txErrorMsg.includes('insufficient lamports') || 
+      const isInsufficientFunds =
+        txErrorMsg.includes('insufficient lamports') ||
         txErrorMsg.includes('0x1') || // Custom program error code for insufficient funds
         txErrorMsg.includes('Attempt to debit an account but found no record of a prior credit');
-      
+
       // Get transaction logs for debugging if available
       if (txError && typeof txError === 'object' && 'logs' in txError) {
         console.log('Transaction logs:', (txError as any).logs);
-        
+
         // Check logs for insufficient funds message
         const logs = (txError as any).logs || [];
         const insufficientLamportsLog = logs.find((log: string) => log.includes('insufficient lamports'));
@@ -163,7 +163,7 @@ export async function createPool({
           if (matches && matches.length === 3) {
             const have = parseInt(matches[1], 10) / 1_000_000_000; // Convert lamports to SOL
             const need = parseInt(matches[2], 10) / 1_000_000_000; // Convert lamports to SOL
-            
+
             const friendlyError = new Error(
               `Insufficient SOL balance for creating pool. You have ${have.toFixed(6)} SOL, but need at least ${need.toFixed(6)} SOL. ` +
               `Please add more SOL to your wallet and try again.`
@@ -173,7 +173,7 @@ export async function createPool({
           }
         }
       }
-      
+
       // Provide a friendly error message for insufficient funds
       if (isInsufficientFunds) {
         const friendlyError = new Error(
@@ -183,13 +183,13 @@ export async function createPool({
         onStatusUpdate?.(`Transaction failed: ${friendlyError.message}`);
         throw friendlyError;
       }
-      
+
       throw txError;
     }
   } catch (error) {
     console.error('Error in createPool:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
+
     // Don't send raw error through status update
     onStatusUpdate?.(`Transaction failed: ${errorMessage}`);
     TransactionService.showError(error);
@@ -289,7 +289,7 @@ export async function addLiquidity({
 }): Promise<string> {
   try {
     onStatusUpdate?.('Preparing liquidity addition...');
-    
+
     const response = await fetch(`${API_BASE_URL}/api/pump-swap/build-add-liquidity`, {
       method: 'POST',
       headers: {
@@ -311,7 +311,7 @@ export async function addLiquidity({
     }
 
     onStatusUpdate?.('Transaction received, sending to wallet...');
-    
+
     // Create a filtered status callback that prevents error messages
     const filteredCallback = (status: string) => {
       if (!status.startsWith('Error:') && !status.includes('failed:')) {
@@ -324,12 +324,12 @@ export async function addLiquidity({
     const signature = await TransactionService.signAndSendTransaction(
       { type: 'base64', data: data.data.transaction },
       solanaWallet,
-      { 
+      {
         connection,
         statusCallback: filteredCallback
       }
     );
-    
+
     onStatusUpdate?.('Liquidity added successfully!');
     return signature;
   } catch (error) {
@@ -424,7 +424,7 @@ export async function swapTokens({
 }: SwapParams & {
   connection: Connection;
   // Make this more flexible to accept any wallet that can be used with TransactionService
-  solanaWallet: StandardWallet | { 
+  solanaWallet: StandardWallet | {
     signAndSendTransaction?: (transaction: any) => Promise<string>;
     request?: (args: { method: string; params: any }) => Promise<any>;
   } | any;
@@ -432,20 +432,20 @@ export async function swapTokens({
 }): Promise<string> {
   console.log('[pumpSwapService] --- Entered swapTokens ---');
   console.log('[pumpSwapService] API_BASE_URL:', API_BASE_URL);
-  
+
   try {
     console.log('[pumpSwapService] Step 1: Calling onStatusUpdate');
     onStatusUpdate?.('Preparing swap transaction...');
-    
+
     console.log('[pumpSwapService] Step 2: Preparing request body');
-    
+
     // Convert PublicKey to string if needed
-    const userPubkeyString = typeof userPublicKey === 'string' 
-      ? userPublicKey 
+    const userPubkeyString = typeof userPublicKey === 'string'
+      ? userPublicKey
       : userPublicKey.toString();
-    
+
     console.log('[pumpSwapService] User public key:', userPubkeyString);
-    
+
     const requestBodyPayload = {
       pool,
       inputAmount: amount,
@@ -453,9 +453,9 @@ export async function swapTokens({
       slippage,
       userPublicKey: userPubkeyString
     };
-    
+
     console.log('[pumpSwapService] Step 3: Request payload:', JSON.stringify(requestBodyPayload, null, 2));
-    
+
     try {
       console.log('[pumpSwapService] Step 4: Making API request to:', `${API_BASE_URL}/api/pump-swap/build-swap`);
       const response = await fetch(`${API_BASE_URL}/api/pump-swap/build-swap`, {
@@ -465,31 +465,31 @@ export async function swapTokens({
         },
         body: JSON.stringify(requestBodyPayload),
       });
-      
+
       console.log('[pumpSwapService] Step 5: API response status:', response.status);
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('[pumpSwapService] API error response:', errorText);
         throw new Error(`Server responded with status ${response.status}: ${errorText}`);
       }
-      
+
       const data = await response.json();
       console.log('[pumpSwapService] Step 6: API response received (success =', data.success, ')');
-      
+
       if (!data.success) {
         console.error('[pumpSwapService] API reported failure:', data.error);
         throw new Error(data.error || 'Failed to perform swap');
       }
-      
+
       if (!data.data || !data.data.transaction) {
         console.error('[pumpSwapService] Missing transaction data in response');
         throw new Error('Server returned invalid transaction data');
       }
-      
+
       console.log('[pumpSwapService] Step 7: Received transaction from server, sending to wallet...');
       onStatusUpdate?.('Transaction received, sending to wallet...');
-      
+
       // Create a filtered status callback that prevents error messages
       const filteredCallback = (status: string) => {
         console.log('[pumpSwapService] Transaction status update:', status);
@@ -500,17 +500,17 @@ export async function swapTokens({
           onStatusUpdate?.('Processing transaction...');
         }
       };
-      
+
       console.log('[pumpSwapService] Step 8: Calling TransactionService.signAndSendTransaction');
       const signature = await TransactionService.signAndSendTransaction(
         { type: 'base64', data: data.data.transaction },
         solanaWallet,
-        { 
+        {
           connection,
           statusCallback: filteredCallback
         }
       );
-      
+
       console.log('[pumpSwapService] Step 9: Transaction signature received:', signature);
       onStatusUpdate?.('Swap completed successfully!');
       return signature;
@@ -534,7 +534,7 @@ export async function swapTokens({
         console.error('[pumpSwapService] Error Stack:', error.stack);
       }
     }
-    
+
     const errorMessage = error instanceof Error ? error.message : String(error);
     onStatusUpdate?.(`Transaction failed: ${errorMessage}`);
     throw error;
@@ -592,7 +592,7 @@ export async function removeLiquidity({
 }): Promise<string> {
   try {
     onStatusUpdate?.('Preparing liquidity removal...');
-    
+
     const response = await fetch(`${API_BASE_URL}/api/pump-swap/build-remove-liquidity`, {
       method: 'POST',
       headers: {
@@ -612,7 +612,7 @@ export async function removeLiquidity({
     }
 
     onStatusUpdate?.('Transaction received, sending to wallet...');
-    
+
     // Create a filtered status callback that prevents error messages
     const filteredCallback = (status: string) => {
       if (!status.startsWith('Error:') && !status.includes('failed:')) {
@@ -625,12 +625,12 @@ export async function removeLiquidity({
     const signature = await TransactionService.signAndSendTransaction(
       { type: 'base64', data: data.data.transaction },
       solanaWallet,
-      { 
+      {
         connection,
         statusCallback: filteredCallback
       }
     );
-    
+
     onStatusUpdate?.('Liquidity removed successfully!');
     return signature;
   } catch (error) {
@@ -664,12 +664,12 @@ export function getPumpAmmSdk() {
  * Get swap quote based on specified parameters
  */
 export function getSwapQuote(
-  pool: string, 
-  amount: number, 
-  direction: Direction, 
+  pool: string,
+  amount: number,
+  direction: Direction,
   slippage: number
 ): Promise<number> {
-  return direction === Direction.BaseToQuote 
+  return direction === Direction.BaseToQuote
     ? getSwapQuoteFromBase(pool, amount, slippage)
     : getSwapQuoteFromQuote(pool, amount, slippage);
 }
@@ -690,6 +690,6 @@ export function getLiquidityQuote(
     return getDepositQuoteFromQuote(pool, quoteAmount, slippage)
       .then(result => ({ base: result.base, lpToken: result.lpToken }));
   }
-  
+
   throw new Error('Either baseAmount or quoteAmount must be provided');
 } 

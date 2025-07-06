@@ -16,7 +16,7 @@ import { loginSuccess, fetchUserProfile, updateProfilePic } from '@/shared/state
 import { RootState } from '@/shared/state/store';
 import { useCustomization } from '@/shared/config/CustomizationProvider';
 import axios from 'axios';
-import { SERVER_URL } from '@env';
+import { EXPO_PUBLIC_SERVER_URL } from '@env';
 import COLORS from '@/assets/colors';
 import { useEnvError } from '@/shared/context/EnvErrorContext';
 import { useDevMode } from '@/shared/context/DevModeContext';
@@ -24,7 +24,7 @@ import { generateAndStoreAvatar } from '@/shared/services/diceBearAvatarService'
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-const SERVER_BASE_URL = SERVER_URL || 'http://localhost:3000';
+const SERVER_BASE_URL = EXPO_PUBLIC_SERVER_URL || 'http://localhost:3000';
 
 // SVG animation configurations
 const SVG_CONFIG = {

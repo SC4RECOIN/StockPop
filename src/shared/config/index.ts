@@ -1,8 +1,8 @@
 // File: src/config/index.ts
 
 import {
-  PRIVY_APP_ID,
-  PRIVY_CLIENT_ID,
+  EXPO_PUBLIC_PRIVY_APP_ID,
+  EXPO_PUBLIC_PRIVY_CLIENT_ID,
   DYNAMIC_ENVIRONMENT_ID,
   TURNKEY_BASE_URL,
   TURNKEY_RP_ID,
@@ -10,10 +10,10 @@ import {
   TURNKEY_ORGANIZATION_ID,
 } from '@env';
 
-import {dummyProfileData} from '@/shared/mocks/profileInfoData';
-import {tweetsData} from '@/shared/mocks/tweets';
-import {allposts} from '@/shared/mocks/posts';
-import {dummyData} from '@/shared/mocks/users';
+import { dummyProfileData } from '@/shared/mocks/profileInfoData';
+import { tweetsData } from '@/shared/mocks/tweets';
+import { allposts } from '@/shared/mocks/posts';
+import { dummyData } from '@/shared/mocks/users';
 
 /** Extended config for each auth provider */
 export interface PrivyConfig {
@@ -71,8 +71,8 @@ export const DefaultAuthConfig: AuthProviderConfig = {
 
   privy: {
     // Read from environment variables or fallback
-    appId: PRIVY_APP_ID || '',
-    clientId: PRIVY_CLIENT_ID || '',
+    appId: EXPO_PUBLIC_PRIVY_APP_ID || '',
+    clientId: EXPO_PUBLIC_PRIVY_CLIENT_ID || '',
   },
 
   dynamic: {

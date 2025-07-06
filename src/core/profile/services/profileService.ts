@@ -4,7 +4,7 @@
  * Handles profile-related server requests and logic.
  */
 
-import {SERVER_URL} from '@env';
+import { EXPO_PUBLIC_SERVER_URL } from '@env';
 
 /**
  * Upload a profile avatar image for a given user.
@@ -18,7 +18,7 @@ export async function uploadProfileAvatar(
   userWallet: string,
   localFileUri: string,
 ): Promise<string> {
-  if (!userWallet || !localFileUri || !SERVER_URL) {
+  if (!userWallet || !localFileUri || !EXPO_PUBLIC_SERVER_URL) {
     throw new Error('Missing data to upload avatar');
   }
 
@@ -31,7 +31,7 @@ export async function uploadProfileAvatar(
     name: `profile_${Date.now()}.jpg`,
   } as any);
 
-  const response = await fetch(`${SERVER_URL}/api/profile/upload`, {
+  const response = await fetch(`${EXPO_PUBLIC_SERVER_URL}/api/profile/upload`, {
     method: 'POST',
     body: formData,
   });
@@ -50,13 +50,13 @@ export async function uploadProfileAvatar(
  * @returns An array of follower objects
  */
 export async function fetchFollowers(userId: string): Promise<any[]> {
-  if (!SERVER_URL) {
-    console.warn('SERVER_URL not set. Returning empty followers array.');
+  if (!EXPO_PUBLIC_SERVER_URL) {
+    console.warn('EXPO_PUBLIC_SERVER_URL not set. Returning empty followers array.');
     return [];
   }
   try {
     const res = await fetch(
-      `${SERVER_URL}/api/profile/followers?userId=${userId}`,
+      `${EXPO_PUBLIC_SERVER_URL}/api/profile/followers?userId=${userId}`,
     );
     const data = await res.json();
     if (data.success && Array.isArray(data.followers)) {
@@ -75,13 +75,13 @@ export async function fetchFollowers(userId: string): Promise<any[]> {
  * @returns An array of following objects
  */
 export async function fetchFollowing(userId: string): Promise<any[]> {
-  if (!SERVER_URL) {
-    console.warn('SERVER_URL not set. Returning empty following array.');
+  if (!EXPO_PUBLIC_SERVER_URL) {
+    console.warn('EXPO_PUBLIC_SERVER_URL not set. Returning empty following array.');
     return [];
   }
   try {
     const res = await fetch(
-      `${SERVER_URL}/api/profile/following?userId=${userId}`,
+      `${EXPO_PUBLIC_SERVER_URL}/api/profile/following?userId=${userId}`,
     );
     const data = await res.json();
     if (data.success && Array.isArray(data.following)) {
@@ -104,15 +104,15 @@ export async function checkIfUserFollowsMe(
   myWallet: string,
   userWallet: string,
 ): Promise<boolean> {
-  if (!SERVER_URL) {
+  if (!EXPO_PUBLIC_SERVER_URL) {
     console.warn(
-      'SERVER_URL not set. Returning false for checkIfUserFollowsMe.',
+      'EXPO_PUBLIC_SERVER_URL not set. Returning false for checkIfUserFollowsMe.',
     );
     return false;
   }
   try {
     const res = await fetch(
-      `${SERVER_URL}/api/profile/followers?userId=${myWallet}`,
+      `${EXPO_PUBLIC_SERVER_URL}/api/profile/followers?userId=${myWallet}`,
     );
     const data = await res.json();
     if (data.success && Array.isArray(data.followers)) {
@@ -130,7 +130,7 @@ export const fetchUserProfile = async (userId: string) => {
     const response = await fetch(`YOUR_API_URL/profile?userId=${userId}`);
     if (!response.ok) throw new Error('Failed to fetch profile');
     const data = await response.json();
-    
+
     return {
       url: data.url,
       username: data.username,

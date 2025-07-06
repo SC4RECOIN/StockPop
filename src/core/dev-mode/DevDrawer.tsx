@@ -13,20 +13,20 @@ import TYPOGRAPHY from '@/assets/typography';
 import NotificationTestPanel from './NotificationTestPanel';
 // Import specific environment variables needed for the frontend
 import {
-    PRIVY_APP_ID,
-    PRIVY_CLIENT_ID,
+    EXPO_PUBLIC_PRIVY_APP_ID,
+    EXPO_PUBLIC_PRIVY_CLIENT_ID,
     CLUSTER,
     TURNKEY_BASE_URL,
     TURNKEY_RP_ID,
     TURNKEY_RP_NAME,
     TURNKEY_ORGANIZATION_ID,
     DYNAMIC_ENVIRONMENT_ID,
-    HELIUS_API_KEY,
+    EXPO_PUBLIC_HELIUS_API_KEY,
     HELIUS_RPC_CLUSTER,
-    SERVER_URL,
+    EXPO_PUBLIC_SERVER_URL,
     TENSOR_API_KEY,
     COINGECKO_API_KEY,
-    BIRDEYE_API_KEY,
+    EXPO_PUBLIC_BIRDEYE_API_KEY,
     HELIUS_STAKED_URL,
     HELIUS_STAKED_API_KEY
 } from '@env';
@@ -303,7 +303,7 @@ const MissingEnvVars = () => {
 };
 
 // Log the server URL for debugging
-console.log('SERVER_URL', SERVER_URL);
+console.log('EXPO_PUBLIC_SERVER_URL', EXPO_PUBLIC_SERVER_URL);
 
 // Custom fetch with timeout function since AbortSignal.timeout is not supported
 const fetchWithTimeout = async (url: string, options: RequestInit = {}, timeout = 5000): Promise<Response> => {
@@ -324,7 +324,7 @@ const ServerStatus = () => {
     const { setServerStatus } = useDevMode();
     const [status, setStatus] = useState<'checking' | 'online' | 'offline'>('checking');
     const [lastChecked, setLastChecked] = useState<Date | null>(null);
-    const [serverUrl, setServerUrl] = useState<string>(SERVER_URL || 'http://localhost:8080');
+    const [serverUrl, setServerUrl] = useState<string>(EXPO_PUBLIC_SERVER_URL || 'http://localhost:8080');
 
     // Check server connection status
     const checkServerStatus = async () => {
@@ -427,10 +427,10 @@ const DevDrawer = () => {
     const checkServerConnection = async () => {
         try {
             setServerConnectionStatus('checking');
-            console.log(`Checking server status in DevDrawer at: ${SERVER_URL || 'http://localhost:8080'}`);
+            console.log(`Checking server status in DevDrawer at: ${EXPO_PUBLIC_SERVER_URL || 'http://localhost:8080'}`);
 
             // Use the ws-health endpoint which should be lightweight and fast
-            const response = await fetchWithTimeout(`${SERVER_URL || 'http://localhost:8080'}/ws-health`, {
+            const response = await fetchWithTimeout(`${EXPO_PUBLIC_SERVER_URL || 'http://localhost:8080'}/ws-health`, {
                 method: 'GET',
                 headers: {
                     'Accept': 'application/json',

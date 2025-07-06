@@ -11,8 +11,8 @@ export const METEORA_DBC_PROGRAM_ID = new PublicKey('dbcij3LWUppWqq96dh6gJWwBifm
 let globalConnection: Connection | null = null;
 
 /**
- * Gets a Solana connection using the RPC_URL from environment variables
- * Falls back to Solana devnet if RPC_URL is not defined
+ * Gets a Solana connection using the EXPO_PUBLIC_RPC_URL from environment variables
+ * Falls back to Solana devnet if EXPO_PUBLIC_RPC_URL is not defined
  * 
  * @param commitment Optional commitment level, defaults to 'confirmed'
  * @returns A Solana Connection
@@ -21,15 +21,15 @@ export function getConnection(commitment: Commitment = 'confirmed'): Connection 
   if (globalConnection) {
     return globalConnection;
   }
-  
-  const rpcUrl = process.env.RPC_URL;
-  
+
+  const rpcUrl = process.env.EXPO_PUBLIC_RPC_URL;
+
   if (!rpcUrl) {
-    console.warn('RPC_URL environment variable not set, falling back to public mainnet');
+    console.warn('EXPO_PUBLIC_RPC_URL environment variable not set, falling back to public mainnet');
     globalConnection = new Connection('https://api.mainnet.solana.com', commitment);
     return globalConnection;
   }
-  
+
   console.log(`Using RPC URL: ${maskRpcUrl(rpcUrl)}`);
   globalConnection = new Connection(rpcUrl, commitment);
   return globalConnection;
@@ -57,15 +57,15 @@ function maskRpcUrl(url: string): string {
       const parts = url.split('://');
       const protocol = parts[0];
       const domain = parts[1].split('/')[0];
-      
+
       // If there's an API key in the URL, mask it
       if (url.includes('?') || url.includes('&')) {
         return `${protocol}://${maskDomain(domain)}/...`;
       }
-      
+
       return `${protocol}://${maskDomain(domain)}`;
     }
-    
+
     // For other formats, just show a placeholder
     return 'RPC URL is set (masked for security)';
   } catch (e) {
@@ -78,7 +78,7 @@ function maskRpcUrl(url: string): string {
  */
 function maskDomain(domain: string): string {
   if (domain.length <= 8) return domain;
-  
+
   const start = domain.slice(0, 4);
   const end = domain.slice(-4);
   return `${start}...${end}`;

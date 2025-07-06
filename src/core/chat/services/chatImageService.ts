@@ -2,7 +2,7 @@
  * Chat image service for uploading images to IPFS
  */
 import axios from 'axios';
-import { SERVER_URL } from '@env';
+import { EXPO_PUBLIC_SERVER_URL } from '@env';
 import * as FileSystem from 'expo-file-system';
 import { Platform } from 'react-native';
 
@@ -17,16 +17,16 @@ export async function uploadChatImage(userId: string, imageUri: string): Promise
   try {
     // Create formData with the image
     const formData = new FormData();
-    
+
     // Get file info
     const fileInfo = await FileSystem.getInfoAsync(imageUri);
     if (!fileInfo.exists) {
       throw new Error('Image file does not exist');
     }
-    
+
     // Get filename from URI
     const fileName = imageUri.split('/').pop() || 'chat-image.jpg';
-    
+
     // Add file to form data
     // @ts-ignore: Expo's FormData implementation has a different type
     formData.append('chatImage', {
@@ -34,12 +34,12 @@ export async function uploadChatImage(userId: string, imageUri: string): Promise
       name: fileName,
       type: 'image/jpeg', // Assuming JPEG, but could be determined dynamically
     });
-    
+
     // Add userId to track who uploaded the image
     formData.append('userId', userId);
 
     // Upload to server endpoint
-    const response = await axios.post(`${SERVER_URL}/api/chat/images/upload`, formData, {
+    const response = await axios.post(`${EXPO_PUBLIC_SERVER_URL}/api/chat/images/upload`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },

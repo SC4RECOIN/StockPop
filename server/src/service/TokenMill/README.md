@@ -98,7 +98,7 @@ The service requires the following environment variables:
 - `TOKEN_MILL_PROGRAMID`: The Solana program ID for TokenMill
 - `TOKEN_MILL_CONFIG_PDA`: The PDA address for TokenMill configuration
 - `WALLET_PRIVATE_KEY`: Private key for the authority wallet
-- `RPC_URL`: Solana RPC URL for network access
+- `EXPO_PUBLIC_RPC_URL`: Solana RPC URL for network access
 
 ## Error Handling
 

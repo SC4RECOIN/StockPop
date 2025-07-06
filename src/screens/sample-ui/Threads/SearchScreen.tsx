@@ -19,7 +19,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { TabView, SceneMap, SceneRendererProps, NavigationState } from 'react-native-tab-view';
 import SearchIcon from '../../../assets/svgs/SearchIcon';
 import CloseIcon from '../../../assets/svgs/CloseIcon';
-import { SERVER_URL, BIRDEYE_API_KEY } from '@env';
+import { EXPO_PUBLIC_SERVER_URL, EXPO_PUBLIC_BIRDEYE_API_KEY } from '@env';
 import TokenDetailsSheet from '../../../core/shared-ui/TrendingTokenDetails/TokenDetailsSheet';
 import { RiskLevel } from '../../../shared/services/rugCheckService';
 import { RootStackParamList } from '@/shared/navigation/RootNavigator';
@@ -128,8 +128,8 @@ export default function SearchScreen({ showHeader = true }: SearchScreenProps) {
   const fetchUsers = async () => {
     setLoadingUsers(true);
     try {
-      console.log('Fetching users from:', `${SERVER_URL}/api/profile/search`);
-      const response = await fetch(`${SERVER_URL}/api/profile/search`);
+      console.log('Fetching users from:', `${EXPO_PUBLIC_SERVER_URL}/api/profile/search`);
+      const response = await fetch(`${EXPO_PUBLIC_SERVER_URL}/api/profile/search`);
 
       if (!response.ok) throw new Error('Failed to fetch users');
 
@@ -160,7 +160,7 @@ export default function SearchScreen({ showHeader = true }: SearchScreenProps) {
           headers: {
             'accept': 'application/json',
             'x-chain': 'solana',
-            'X-API-KEY': BIRDEYE_API_KEY
+            'X-API-KEY': EXPO_PUBLIC_BIRDEYE_API_KEY
           },
         }
       );

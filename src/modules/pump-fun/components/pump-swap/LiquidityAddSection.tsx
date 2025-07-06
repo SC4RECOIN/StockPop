@@ -16,7 +16,7 @@ import {
   addLiquidity
 } from '../../services/pumpSwapService'; // <--- calls the server, not the SDK
 import { DEFAULT_SLIPPAGE } from '../../utils/pumpSwapUtils';
-import { SERVER_URL } from '@env';
+import { EXPO_PUBLIC_SERVER_URL } from '@env';
 import { TokenInfo } from '../../../data-module/types/tokenTypes';
 
 // Token address examples as placeholders
@@ -98,7 +98,7 @@ export function LiquidityAddSection({
         }
 
         // First attempt - try to use the quote API to get pool data
-        const response = await fetch(`${SERVER_URL}/api/pump-swap/quote-swap`, {
+        const response = await fetch(`${EXPO_PUBLIC_SERVER_URL}/api/pump-swap/quote-swap`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

@@ -26,7 +26,7 @@ import { IPFSAwareImage, getValidImageSource, fixAllImageUrls } from '@/shared/u
 import { useWallet } from '@/modules/wallet-providers/hooks/useWallet';
 import { VersionedTransaction, Connection } from '@solana/web3.js';
 import bs58 from 'bs58';
-import { HELIUS_STAKED_URL, SERVER_URL } from '@env';
+import { HELIUS_STAKED_URL, EXPO_PUBLIC_SERVER_URL } from '@env';
 
 export interface PortfolioSectionProps {
   sectionTitle: string;
@@ -79,7 +79,7 @@ const SOL_DECIMAL = 1000000000; // 1 SOL = 10^9 lamports
 // NFT data cache to prevent redundant fetches
 const nftDataCache = new Map<string, any>();
 
-const SERVER_BASE_URL = SERVER_URL || 'http://localhost:3000';
+const SERVER_BASE_URL = EXPO_PUBLIC_SERVER_URL || 'http://localhost:3000';
 
 // List renderer for token items
 const TokenListItem: React.FC<{

@@ -1,6 +1,6 @@
 // File: src/utils/common/fetch.ts
 
-import {CLUSTER, HELIUS_API_KEY, HELIUS_STAKED_URL} from '@env';
+import { CLUSTER, EXPO_PUBLIC_HELIUS_API_KEY, HELIUS_STAKED_URL } from '@env';
 import { Connection, PublicKey } from '@solana/web3.js';
 import { TokenEntry } from '../types/tokenTypes';
 import { ENDPOINTS } from '@/shared/config/constants';
@@ -36,7 +36,7 @@ export async function fetchWithRetries(
     } catch (err: any) {
       lastError = err;
       attempt++;
-      
+
       if (attempt >= maxRetries) break;
 
       // Exponential backoff
@@ -47,10 +47,9 @@ export async function fetchWithRetries(
       await new Promise(res => setTimeout(res, delayMs));
     }
   }
-  
+
   throw new Error(
-    `[fetchWithRetries] All ${maxRetries} attempts failed. Last error: ${
-      lastError?.message ?? 'Unknown error'
+    `[fetchWithRetries] All ${maxRetries} attempts failed. Last error: ${lastError?.message ?? 'Unknown error'
     }`,
   );
 }
@@ -69,13 +68,13 @@ export async function fetchSolBalance(
       method: 'getBalance',
       params: [userPublicKey],
     };
-    
+
     const res = await fetchWithRetries(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
-    
+
     const data = await res.json();
     if (data?.result?.value) {
       return data.result.value;
@@ -116,12 +115,12 @@ export async function fetchUserAssets(walletAddress: string) {
         },
       }),
     });
-    
+
     const data = await response.json();
     if (data.error) {
       throw new Error(data.error.message || 'Failed to fetch assets');
     }
-    
+
     return data.result;
   } catch (err) {
     console.error('Error fetching user assets:', err);
@@ -139,17 +138,17 @@ export async function fetchTokenAccounts(
     // Try to use the Helius DAS API first
     const assets = await fetchUserAssets(userPublicKey);
     const tokenItems = assets.items.filter(
-      (item: any) => 
-        item.interface === 'V1_TOKEN' || 
+      (item: any) =>
+        item.interface === 'V1_TOKEN' ||
         item.interface === 'FungibleToken' ||
         (item.token_info && item.token_info.balance)
     );
-    
+
     // Convert to the legacy TokenEntry format
     return tokenItems.map((item: any) => {
       const decimals = item.token_info?.decimals || 0;
       const balance = item.token_info?.balance || '0';
-      
+
       return {
         accountPubkey: item.token_info?.associated_token_address || '',
         mintPubkey: item.id || item.mint,
@@ -159,7 +158,7 @@ export async function fetchTokenAccounts(
     });
   } catch (err) {
     console.error('Error in fetchTokenAccounts:', err);
-    
+
     // Fall back to legacy method if Helius fails
     return fetchTokenAccountsFallback(userPublicKey);
   }
@@ -178,14 +177,14 @@ async function fetchTokenAccountsFallback(userPublicKey: string): Promise<TokenE
       method: 'getTokenAccountsByOwner',
       params: [
         userPublicKey,
-        {programId: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'},
-        {encoding: 'jsonParsed'},
+        { programId: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' },
+        { encoding: 'jsonParsed' },
       ],
     };
 
     const res = await fetchWithRetries(url, {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
     const data = await res.json();
@@ -234,7 +233,7 @@ export async function fetchTokenAccountBalance(tokenAccount: string) {
     };
     const res = await fetchWithRetries(url, {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
     const data = await res.json();
@@ -242,10 +241,10 @@ export async function fetchTokenAccountBalance(tokenAccount: string) {
       // returns { uiAmount, decimals, amount, uiAmountString, ...}
       return data.result.value;
     }
-    return {uiAmount: 0, decimals: 0};
+    return { uiAmount: 0, decimals: 0 };
   } catch (err) {
     console.warn(`Error in fetchTokenAccountBalance for ${tokenAccount}:`, err);
-    return {uiAmount: 0, decimals: 0};
+    return { uiAmount: 0, decimals: 0 };
   }
 }
 
@@ -260,14 +259,14 @@ export async function getBalanceWithRetries(
 ): Promise<number> {
   let attempt = 0;
   let lastError: Error | undefined;
-  
+
   while (attempt < maxRetries) {
     try {
       return await connection.getBalance(pubkey);
     } catch (err: any) {
       lastError = err;
       attempt++;
-      
+
       if (attempt >= maxRetries) break;
 
       const delayMs = baseDelay * Math.pow(2, attempt - 1);
@@ -277,10 +276,9 @@ export async function getBalanceWithRetries(
       await new Promise(res => setTimeout(res, delayMs));
     }
   }
-  
+
   throw new Error(
-    `[getBalanceWithRetries] All ${maxRetries} attempts failed. Last error: ${
-      lastError?.message || 'Unknown error'
+    `[getBalanceWithRetries] All ${maxRetries} attempts failed. Last error: ${lastError?.message || 'Unknown error'
     }`,
   );
 }
