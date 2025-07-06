@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Activ
 import { useDevMode } from '@/shared/context/DevModeContext';
 import { useEnvError } from '@/shared/context/EnvErrorContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { navigationRef } from '@/shared/hooks/useAppNavigation';
 import { useDispatch } from 'react-redux';
 import { useSelector } from 'react-redux';
@@ -13,22 +12,7 @@ import TYPOGRAPHY from '@/assets/typography';
 import NotificationTestPanel from './NotificationTestPanel';
 // Import specific environment variables needed for the frontend
 import {
-    EXPO_PUBLIC_PRIVY_APP_ID,
-    EXPO_PUBLIC_PRIVY_CLIENT_ID,
-    CLUSTER,
-    TURNKEY_BASE_URL,
-    TURNKEY_RP_ID,
-    TURNKEY_RP_NAME,
-    TURNKEY_ORGANIZATION_ID,
-    DYNAMIC_ENVIRONMENT_ID,
-    EXPO_PUBLIC_HELIUS_API_KEY,
-    HELIUS_RPC_CLUSTER,
     EXPO_PUBLIC_SERVER_URL,
-    TENSOR_API_KEY,
-    COINGECKO_API_KEY,
-    EXPO_PUBLIC_BIRDEYE_API_KEY,
-    HELIUS_STAKED_URL,
-    HELIUS_STAKED_API_KEY
 } from '@env';
 
 // Sample dummy data for profile and posts

@@ -3,20 +3,9 @@ import { Alert, Modal, StyleSheet, Text, View, TouchableOpacity } from 'react-na
 import {
     EXPO_PUBLIC_PRIVY_APP_ID,
     EXPO_PUBLIC_PRIVY_CLIENT_ID,
-    CLUSTER,
-    TURNKEY_BASE_URL,
-    TURNKEY_RP_ID,
-    TURNKEY_RP_NAME,
-    TURNKEY_ORGANIZATION_ID,
-    DYNAMIC_ENVIRONMENT_ID,
+    EXPO_PUBLIC_CLUSTER,
     EXPO_PUBLIC_HELIUS_API_KEY,
-    HELIUS_RPC_CLUSTER,
     EXPO_PUBLIC_SERVER_URL,
-    TENSOR_API_KEY,
-    COINGECKO_API_KEY,
-    EXPO_PUBLIC_BIRDEYE_API_KEY,
-    HELIUS_STAKED_URL,
-    HELIUS_STAKED_API_KEY
 } from '@env';
 import { useDevMode } from './DevModeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -57,20 +46,20 @@ export function EnvErrorProvider({ children }: EnvErrorProviderProps) {
         const envVars: Record<string, string | undefined> = {
             EXPO_PUBLIC_PRIVY_APP_ID,
             EXPO_PUBLIC_PRIVY_CLIENT_ID,
-            CLUSTER,
-            TURNKEY_BASE_URL,
-            TURNKEY_RP_ID,
-            TURNKEY_RP_NAME,
-            TURNKEY_ORGANIZATION_ID,
-            DYNAMIC_ENVIRONMENT_ID,
+            EXPO_PUBLIC_CLUSTER,
+            // TURNKEY_BASE_URL,
+            // TURNKEY_RP_ID,
+            // TURNKEY_RP_NAME,
+            // TURNKEY_ORGANIZATION_ID,
+            // DYNAMIC_ENVIRONMENT_ID,
             EXPO_PUBLIC_HELIUS_API_KEY,
-            HELIUS_RPC_CLUSTER,
+            // HELIUS_RPC_CLUSTER,
             EXPO_PUBLIC_SERVER_URL,
-            TENSOR_API_KEY,
-            COINGECKO_API_KEY,
-            EXPO_PUBLIC_BIRDEYE_API_KEY,
-            HELIUS_STAKED_URL,
-            HELIUS_STAKED_API_KEY
+            // TENSOR_API_KEY,
+            // COINGECKO_API_KEY,
+            // EXPO_PUBLIC_BIRDEYE_API_KEY,
+            // HELIUS_STAKED_URL,
+            // HELIUS_STAKED_API_KEY
         };
 
         // Find missing variables

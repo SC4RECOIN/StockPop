@@ -77,7 +77,7 @@ export const DefaultAuthConfig: AuthProviderConfig = {
 
   dynamic: {
     environmentId: DYNAMIC_ENVIRONMENT_ID || '',
-    appName: 'Solana App Kit',
+    appName: 'StockPop',
     appLogoUrl: 'https://solana.com/src/img/branding/solanaLogoMark.svg',
   },
 
