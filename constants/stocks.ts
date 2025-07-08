@@ -1,3 +1,8 @@
+enum Category {
+    Stock = "Stock",
+    ETF = "ETF",
+}
+
 // https://xstocks.com/products
 export const stocks = [
     {
@@ -212,7 +217,10 @@ export const stocks = [
     {
         ticker: "QQQx",
         name: "Nasdaq",
-        mint: "Xs8S1uUs1zvS2p7iwtsG3b6fkhpvmwz4GYU3gWAmWHZ"
+        mint: "Xs8S1uUs1zvS2p7iwtsG3b6fkhpvmwz4GYU3gWAmWHZ",
+        category: Category.ETF,
+        image: "https://cdn.prod.website-files.com/655f3efc4be468487052e35a/68511cb6e367f19f06664527_QQQx.svg",
+        description: "Invesco QQQ Trust (QQQ) is an exchange-traded fund that aims to track the performance of the Nasdaq-100 Index, which includes 100 of the largest non-financial companies listed on the Nasdaq Stock Market. It offers concentrated exposure to major technology and growth-oriented companies."
     },
     {
         ticker: "NFLXx",
@@ -272,7 +280,10 @@ export const stocks = [
     {
         ticker: "SPYx",
         name: "SP500",
-        mint: "XsoCS1TfEyfFhfvj8EtZ528L3CaKBDBRqRapnBbDF2W"
+        mint: "XsoCS1TfEyfFhfvj8EtZ528L3CaKBDBRqRapnBbDF2W",
+        image: "https://cdn.prod.website-files.com/655f3efc4be468487052e35a/685116624ae31d5ceb724895_Ticker%3DSPX%2C%20Company%20Name%3DSP500%2C%20size%3D256x256.svg",
+        category: Category.ETF,
+        description: "SPDR S&P 500 ETF Trust (SPY) is an exchange-traded fund that seeks to track the performance of the S&P 500 Index, representing 500 of the largest publicly traded companies in the U.S. It offers broad exposure to the U.S. equity market and is one of the most widely traded ETFs globally."
     },
     {
         ticker: "TSLAx",
@@ -287,7 +298,9 @@ export const stocks = [
     {
         ticker: "TQQQx",
         name: "TQQQ",
-        mint: "XsjQP3iMAaQ3kQScQKthQpx9ALRbjKAjQtHg6TFomoc"
+        category: Category.ETF,
+        mint: "XsjQP3iMAaQ3kQScQKthQpx9ALRbjKAjQtHg6TFomoc",
+        description: "ProShares UltraPro QQQ (TQQQ) is a leveraged exchange-traded fund designed to deliver three times the daily performance of the Nasdaq-100 Index. It targets short-term traders and is intended for use over brief holding periods due to its daily reset and high volatility."
     },
     {
         ticker: "UNHx",
@@ -297,7 +310,9 @@ export const stocks = [
     {
         ticker: "VTIx",
         name: "Vanguard",
-        mint: "XsssYEQjzxBCFgvYFFNuhJFBeHNdLWYeUSP8F45cDr9"
+        mint: "XsssYEQjzxBCFgvYFFNuhJFBeHNdLWYeUSP8F45cDr9",
+        category: Category.ETF,
+        description: "Vanguard Total Stock Market Index Fund ETF (VTI) is an exchange-traded fund that seeks to track the performance of the CRSP U.S. Total Market Index, covering nearly all publicly traded U.S. companies. It offers broad exposure to large-, mid-, small-, and micro-cap stocks across all sectors."
     },
     {
         ticker: "Vx",
