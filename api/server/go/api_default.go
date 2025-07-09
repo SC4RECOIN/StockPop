@@ -17,9 +17,8 @@ type DefaultAPI struct {
 }
 
 // Get /stocks
-// Get a list of tradable stocks 
+// Get a list of tradable stocks
 func (api *DefaultAPI) GetStocks(c *gin.Context) {
 	// Your handler implementation
 	c.JSON(200, gin.H{"status": "OK"})
 }
-

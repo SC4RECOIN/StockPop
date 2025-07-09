@@ -8,8 +8,9 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "test": "jest --watchAll",
-    "generate-api": "cd api && npx @openapitools/openapi-generator-cli generate -i stocks.yaml -g go-gin-server -o server --git-repo-id StockPop/api/server --git-user-id SC4RECOIN --featureCORS",
-    "generate-client": "cd api && npx @openapitools/openapi-generator-cli generate -i stocks.yaml -g typescript-node -o client"
+    "generate-api": "cd api && npx @openapitools/openapi-generator-cli generate -i stocks.yaml -g go-gin-server -o server --git-repo-id StockPop/api/server --git-user-id SC4RECOIN --additional-properties=featureCORS=true,serverPort=5500",
+    "generate-client": "cd api && npx @openapitools/openapi-generator-cli generate -i stocks.yaml -g typescript-node -o client",
+    "server": "cd api/server && go run main.go"
   },
   "jest": {
     "preset": "jest-expo"
