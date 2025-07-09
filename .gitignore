@@ -35,3 +35,11 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+
+# api files
+api/server/.openapi-generator
+api/server/api/openapi.yaml
+api/server/.openapi-generator-ignore
+api/openapitools.json
+api/client/.openapi-generator
+api/client/.openapi-generator-ignore

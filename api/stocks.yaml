@@ -1,0 +1,35 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: StockPop API
+paths:
+  /stocks:
+    get:
+      summary: Get a list of tradable stocks
+      description: ''
+      operationId: getStocks
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stocks'
+components:
+  schemas:
+    Stocks:
+      title: Stocks
+      description: A list of tradable stocks
+      type: array
+      items:
+        $ref: '#/components/schemas/Stock'
+    Stock:  
+      title: Stock
+      description: A tradable stock
+      type: object
+      properties:
+        id:
+          type: string
+          description: The stock mint
+        dex:
+          type: string

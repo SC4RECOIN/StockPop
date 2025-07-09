@@ -7,7 +7,9 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "test": "jest --watchAll"
+    "test": "jest --watchAll",
+    "generate-api": "cd api && npx @openapitools/openapi-generator-cli generate -i stocks.yaml -g go-gin-server -o server --git-repo-id StockPop/api/server --git-user-id SC4RECOIN --featureCORS",
+    "generate-client": "cd api && npx @openapitools/openapi-generator-cli generate -i stocks.yaml -g typescript-node -o client"
   },
   "jest": {
     "preset": "jest-expo"
@@ -23,19 +25,23 @@
     "expo-status-bar": "~2.2.3",
     "expo-system-ui": "~5.0.10",
     "expo-web-browser": "~14.2.0",
+    "fern-api": "0.60.2",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-native": "0.79.5",
     "react-native-reanimated": "~3.17.4",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
+    "react-native-svg": "15.11.2",
     "react-native-web": "~0.20.0",
-    "react-native-svg": "15.11.2"
+    "request": "^2.88.2"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
+    "@openapitools/openapi-generator-cli": "^2.21.0",
     "@types/react": "~19.0.10",
     "@types/react-native": "^0.72.8",
+    "@types/request": "^2.48.12",
     "jest": "^29.2.1",
     "jest-expo": "~53.0.9",
     "react-test-renderer": "19.0.0",
