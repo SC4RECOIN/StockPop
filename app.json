@@ -21,7 +21,8 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.sc4recoin.stockpop"
     },
     "web": {
       "bundler": "metro",
@@ -33,6 +34,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "434ac5e0-a09f-4e8a-8e43-ad04d4ebfcc6"
+      }
+    },
+    "owner": "sc4recoin"
   }
 }
