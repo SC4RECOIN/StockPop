@@ -1,4 +1,4 @@
-import { StyleSheet, FlatList, Image } from 'react-native';
+import { StyleSheet, FlatList, Image, ActivityIndicator } from 'react-native';
 import { View, Text } from '@/components/Themed';
 import Decimal from 'decimal.js';
 import { useQuery } from '@tanstack/react-query';
@@ -10,15 +10,13 @@ export default function DiscoverScreen() {
   const client = useApiClient();
   const { data, isLoading, error } = useQuery({ queryKey: ['stocks'], queryFn: () => client.stocks.tradable.query() })
 
-  console.log('Data:', data, isLoading, error, `${process.env.EXPO_PUBLIC_API_URL}:3000/trpc`);
-
   const renderStockItem = ({ item }: { item: Pool }) => {
     const asset = item.baseAsset;
     const priceChange = new Decimal(asset.stats24h.priceChange ?? 0).div(asset.usdPrice).mul(100)
 
     const formatter = new Intl.NumberFormat('en-US', {
       notation: 'compact',
-      compactDisplay: 'short', // 'short' for 'M', 'B', etc., 'long' for 'million', 'billion'
+      compactDisplay: 'short',
     }).format
 
     return (
@@ -55,13 +53,20 @@ export default function DiscoverScreen() {
 
   return (
     <View style={styles.container}>
-      <FlatList
-        data={pools}
-        keyExtractor={(item) => item.id}
-        renderItem={renderStockItem}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
-      />
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#ffffff" />
+          <Text style={styles.loadingText}>Loading stocks...</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={pools}
+          keyExtractor={(item) => item.id}
+          renderItem={renderStockItem}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+        />
+      )}
     </View>
   );
 }
@@ -114,5 +119,14 @@ const styles = StyleSheet.create({
   },
   change: {
     fontSize: 14,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
   },
 });
