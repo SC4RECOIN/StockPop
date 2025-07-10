@@ -1,57 +1,38 @@
 import { StyleSheet, FlatList, Image } from 'react-native';
-import { SvgUri } from 'react-native-svg';
-
 import { View, Text } from '@/components/Themed';
-import { stocks } from '@/constants/stocks';
-import Colors from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
+import Decimal from 'decimal.js';
+import { useQuery } from '@tanstack/react-query';
+import { ApiTypes, useApiClient } from '@/components/useApiClient';
 
-// Define the Stock interface
-interface Stock {
-  ticker: string;
-  name: string;
-  mint: string;
-  image: string;
-  price: string;
-  change: string;
-}
-
-// Add dummy price data to each stock
-const stocksWithPrices = stocks.map(stock => ({
-  ...stock,
-  price: `$${(Math.random() * 1000 + 20).toFixed(2)}`,
-  change: (Math.random() * 20 - 10).toFixed(2),
-  image: stock.image || 'https://cdn.prod.website-files.com/655f3efc4be468487052e35a/684aae04a3d8452e0ae4bad8_Ticker%3DGOOG%2C%20Company%20Name%3DAlphabet%20Inc.%2C%20size%3D256x256.svg'
-}));
+type Pool = ApiTypes['stocks']['tradable']['pools'][number]
 
 export default function DiscoverScreen() {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
+  const client = useApiClient();
+  const { data, isLoading } = useQuery({ queryKey: ['stocks'], queryFn: () => client.stocks.tradable.query() })
 
-  const renderStockItem = ({ item }: { item: Stock }) => {
-    const isPositiveChange = parseFloat(item.change) >= 0;
+  const renderStockItem = ({ item }: { item: Pool }) => {
+    const asset = item.baseAsset;
+    const priceChange = new Decimal(asset.stats24h.priceChange ?? 0).div(asset.usdPrice).mul(100)
 
     return (
       <View style={styles.stockItem}>
-        <SvgUri
+        <Image
+          source={{ uri: asset.icon }}
           style={styles.stockImage}
-          uri={item.image}
-          width={40}
-          height={40}
         />
 
         <View style={styles.stockInfo}>
-          <Text style={styles.ticker}>{item.ticker}</Text>
-          <Text style={styles.name}>{item.name}</Text>
+          <Text style={styles.ticker}>{asset.symbol}</Text>
+          <Text style={styles.name}>{asset.name}</Text>
         </View>
 
         <View style={styles.priceContainer}>
-          <Text style={styles.price}>{item.price}</Text>
+          <Text style={styles.price}>{asset.stockData.price}</Text>
           <Text style={[
             styles.change,
-            { color: isPositiveChange ? '#4CAF50' : '#F44336' }
+            { color: priceChange.isPositive() ? '#4CAF50' : '#F44336' }
           ]}>
-            {isPositiveChange ? '+' : ''}{item.change}%
+            {priceChange.toFixed(2)}%
           </Text>
         </View>
       </View>
@@ -61,8 +42,8 @@ export default function DiscoverScreen() {
   return (
     <View style={styles.container}>
       <FlatList
-        data={stocksWithPrices}
-        keyExtractor={(item) => item.ticker}
+        data={data?.pools ?? []}
+        keyExtractor={(item) => item.id}
         renderItem={renderStockItem}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
@@ -92,6 +73,8 @@ const styles = StyleSheet.create({
   stockImage: {
     borderRadius: 20,
     marginRight: 15,
+    width: 40,
+    height: 40,
   },
   stockInfo: {
     flex: 1,
