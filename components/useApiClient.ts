@@ -8,7 +8,7 @@ export function useApiClient() {
   return createTRPCClient<AppRouter>({
     links: [
       httpBatchLink({
-        url: 'http://localhost:3000/trpc',
+        url: `${process.env.EXPO_PUBLIC_API_URL}:3000/trpc`,
       }),
     ],
   });

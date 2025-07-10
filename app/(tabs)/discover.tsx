@@ -8,11 +8,18 @@ type Pool = ApiTypes['stocks']['tradable']['pools'][number]
 
 export default function DiscoverScreen() {
   const client = useApiClient();
-  const { data, isLoading } = useQuery({ queryKey: ['stocks'], queryFn: () => client.stocks.tradable.query() })
+  const { data, isLoading, error } = useQuery({ queryKey: ['stocks'], queryFn: () => client.stocks.tradable.query() })
+
+  console.log('Data:', data, isLoading, error, `${process.env.EXPO_PUBLIC_API_URL}:3000/trpc`);
 
   const renderStockItem = ({ item }: { item: Pool }) => {
     const asset = item.baseAsset;
     const priceChange = new Decimal(asset.stats24h.priceChange ?? 0).div(asset.usdPrice).mul(100)
+
+    const formatter = new Intl.NumberFormat('en-US', {
+      notation: 'compact',
+      compactDisplay: 'short', // 'short' for 'M', 'B', etc., 'long' for 'million', 'billion'
+    }).format
 
     return (
       <View style={styles.stockItem}>
@@ -27,7 +34,7 @@ export default function DiscoverScreen() {
         </View>
 
         <View style={styles.priceContainer}>
-          <Text style={styles.price}>{asset.stockData.price}</Text>
+          <Text style={styles.price}>${asset.stockData.price.toFixed(2)}</Text>
           <Text style={[
             styles.change,
             { color: priceChange.isPositive() ? '#4CAF50' : '#F44336' }
@@ -35,14 +42,21 @@ export default function DiscoverScreen() {
             {priceChange.toFixed(2)}%
           </Text>
         </View>
+
+        <View style={styles.mcapInfo}>
+          <Text style={styles.ticker}>{formatter(asset.stockData.mcap)}</Text>
+          <Text style={styles.name}>{formatter(asset.mcap)}</Text>
+        </View>
       </View>
     );
   };
 
+  const pools = data?.pools.sort((a, b) => b.baseAsset.stockData.price - a.baseAsset.stockData.price) ?? []
+
   return (
     <View style={styles.container}>
       <FlatList
-        data={data?.pools ?? []}
+        data={pools}
         keyExtractor={(item) => item.id}
         renderItem={renderStockItem}
         showsVerticalScrollIndicator={false}
@@ -78,7 +92,9 @@ const styles = StyleSheet.create({
   },
   stockInfo: {
     flex: 1,
-    backgroundColor: 'transparent',
+  },
+  mcapInfo: {
+    minWidth: 40,
   },
   ticker: {
     fontSize: 16,
@@ -90,7 +106,7 @@ const styles = StyleSheet.create({
   },
   priceContainer: {
     alignItems: 'flex-end',
-    backgroundColor: 'transparent',
+    marginRight: 30,
   },
   price: {
     fontSize: 16,
