@@ -65,11 +65,9 @@ export const dynamicClient = createClient({
 
 
 function RootLayoutNav() {
-  const colorScheme = useColorScheme();
-
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <ThemeProvider value={DarkTheme}>
         <GestureHandlerRootView style={{ flex: 1 }}>
           <NotifierWrapper>
             <dynamicClient.reactNative.WebView />
