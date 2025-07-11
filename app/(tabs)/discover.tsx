@@ -3,12 +3,22 @@ import { View, Text } from '@/components/Themed';
 import Decimal from 'decimal.js';
 import { useQuery } from '@tanstack/react-query';
 import { ApiTypes, useApiClient } from '@/components/useApiClient';
+import { useEffect } from 'react';
+import { Notifier } from 'react-native-notifier';
+import { getErrorAlert } from '@/components/utils';
 
 type Pool = ApiTypes['stocks']['tradable']['pools'][number]
 
 export default function DiscoverScreen() {
   const client = useApiClient();
   const { data, isLoading, error } = useQuery({ queryKey: ['stocks'], queryFn: () => client.stocks.tradable.query() })
+
+  useEffect(() => {
+    if (error) {
+      console.error('Error fetching stocks:', error);
+      Notifier.showNotification(getErrorAlert(error, 'Error loading stocks'));
+    }
+  }, [error]);
 
   const renderStockItem = ({ item }: { item: Pool }) => {
     const asset = item.baseAsset;
@@ -53,7 +63,7 @@ export default function DiscoverScreen() {
 
   return (
     <View style={styles.container}>
-      {isLoading ? (
+      {(isLoading && !error) ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#ffffff" />
           <Text style={styles.loadingText}>Loading stocks...</Text>
