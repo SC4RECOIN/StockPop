@@ -4,7 +4,7 @@ import { Link, Tabs } from 'expo-router';
 import { Pressable } from 'react-native';
 import Colors from '@/constants/Colors';
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
-import { usePrivy } from '@privy-io/expo';
+import { useWallet } from '@/components/useWallet';
 
 
 // https://icons.expo.fyi/
@@ -16,8 +16,7 @@ function TabBarIcon(props: {
 }
 
 export default function TabLayout() {
-  const { user } = usePrivy();
-  console.log('User:', user);
+  const { connected } = useWallet();
 
   return (
     <Tabs
@@ -42,8 +41,8 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color }) => <TabBarIcon name="area-chart" color={color} />,
-          headerShown: !user ? false : true,
-          headerRight: user ? () => (
+          headerShown: useClientOnlyValue(false, connected),
+          headerRight: () => (
             <Link href="/modal" asChild>
               <Pressable>
                 {({ pressed }) => (
@@ -56,7 +55,7 @@ export default function TabLayout() {
                 )}
               </Pressable>
             </Link>
-          ) : undefined,
+          ),
         }}
       />
       <Tabs.Screen

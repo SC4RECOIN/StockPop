@@ -1,18 +1,14 @@
-import { StatusBar } from 'expo-status-bar';
-import { Platform, StyleSheet } from 'react-native';
-
+import { StyleSheet } from 'react-native';
 import { Text, View } from '@/components/Themed';
-import { usePrivy } from '@privy-io/expo';
+import { useAuthorization } from '@/components/AuthorizationProvider';
 
 export default function ModalScreen() {
-  const { user } = usePrivy();
-  console.log('User:', user);
+  const { selectedAccount } = useAuthorization();
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Modal</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <Text>YEEE</Text>
+      <Text>Connected Wallet</Text>
+      <Text>{selectedAccount && selectedAccount?.address}</Text>
     </View>
   );
 }
@@ -21,7 +17,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
   },
   title: {
     fontSize: 20,

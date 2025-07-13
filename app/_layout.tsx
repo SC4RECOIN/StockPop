@@ -13,6 +13,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { NotifierWrapper } from 'react-native-notifier';
 import { PrivyProvider } from "@privy-io/expo";
 import { PrivyElements } from "@privy-io/expo/ui";
+import { AuthorizationProvider } from '@/components/AuthorizationProvider';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -60,16 +61,18 @@ function RootLayoutNav() {
       <ThemeProvider value={DarkTheme}>
         <GestureHandlerRootView style={{ flex: 1 }}>
           <NotifierWrapper>
-            <PrivyProvider
-              appId={process.env.EXPO_PUBLIC_PRIVY_APP_ID!}
-              clientId={process.env.EXPO_PUBLIC_PRIVY_CLIENT_ID!}
-            >
-              <Stack>
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-              </Stack>
-              <PrivyElements />
-            </PrivyProvider>
+            <AuthorizationProvider>
+              <PrivyProvider
+                appId={process.env.EXPO_PUBLIC_PRIVY_APP_ID!}
+                clientId={process.env.EXPO_PUBLIC_PRIVY_CLIENT_ID!}
+              >
+                <Stack>
+                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                  <Stack.Screen name="modal" options={{ presentation: 'modal', title: "Connected Wallet" }} />
+                </Stack>
+                <PrivyElements />
+              </PrivyProvider>
+            </AuthorizationProvider>
           </NotifierWrapper>
         </GestureHandlerRootView>
       </ThemeProvider>

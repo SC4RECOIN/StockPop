@@ -1,23 +1,25 @@
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, Image } from 'react-native';
 import { Text, View } from '@/components/Themed';
-import { hasError, usePrivy } from '@privy-io/expo';
+import { usePrivy } from '@privy-io/expo';
 import { useLoginWithOAuth } from '@privy-io/expo';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { getErrorAlert } from '@/components/utils';
 import { Notifier } from 'react-native-notifier';
+import { useAuthorization } from '@/components/AuthorizationProvider';
+import { transact } from '@solana-mobile/mobile-wallet-adapter-protocol';
 
 export default function TabOneScreen() {
   const { user } = usePrivy();
+  const { selectedAccount } = useAuthorization();
 
-  if (!user) {
+  if (!user && !selectedAccount) {
     return <LoginScreen />;
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome to StockPop</Text>
-      <Text>Your dashboard will appear here</Text>
+      <Text style={styles.title}>Hello</Text>
     </View>
   );
 }
@@ -41,10 +43,20 @@ const styles = StyleSheet.create({
 
 function LoginScreen() {
   const oauth = useLoginWithOAuth();
+  const { authorizeSession } = useAuthorization();
+  const [authorizationInProgress, setAuthorizationInProgress] = useState(false);
 
-  useEffect(() => {
-    console.log('OAuth status:', oauth.state.status);
-  }, [oauth.state.status]);
+  const handleConnectPress = useCallback(async () => {
+    try {
+      if (authorizationInProgress) return;
+      setAuthorizationInProgress(true);
+      await transact(async wallet => {
+        await authorizeSession(wallet);
+      });
+    } finally {
+      setAuthorizationInProgress(false);
+    }
+  }, [authorizationInProgress, authorizeSession]);
 
   useEffect(() => {
     if (oauth.state.status === 'error') {
@@ -55,8 +67,9 @@ function LoginScreen() {
 
   return (
     <View style={loginStyles.loginContainer}>
-      <Text style={loginStyles.loginTitle}>Welcome to StockPop</Text>
-      <Text style={loginStyles.loginSubtitle}>Please sign in to continue</Text>
+      <Text style={loginStyles.loginTitle}>StockPop</Text>
+      <Image source={require('../../pop.png')} style={loginStyles.logo} />
+      <Text style={loginStyles.loginSubtitle}>Please sign in to start trading stocks</Text>
 
       <Pressable
         style={({ pressed }) => [loginStyles.loginButton, { opacity: pressed ? 0.8 : 1 }]}
@@ -69,7 +82,8 @@ function LoginScreen() {
 
       <Pressable
         style={({ pressed }) => [loginStyles.loginButton, loginStyles.walletButton, { opacity: pressed ? 0.8 : 1 }]}
-        onPress={() => console.log("connect wallet")}
+        onPress={() => handleConnectPress()}
+        disabled={authorizationInProgress}
       >
         <Text style={loginStyles.buttonText}>Connect Wallet</Text>
       </Pressable>
@@ -88,6 +102,12 @@ const loginStyles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 10,
+  },
+  logo: {
+    width: 200,
+    height: 200,
+    resizeMode: 'contain',
+    marginBottom: 20,
   },
   loginSubtitle: {
     fontSize: 16,
