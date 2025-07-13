@@ -1,5 +1,5 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -9,12 +9,10 @@ import {
   QueryClient,
   QueryClientProvider,
 } from '@tanstack/react-query'
-import { createClient } from "@dynamic-labs/client";
-import { ReactNativeExtension } from "@dynamic-labs/react-native-extension";
-import { SolanaExtension } from "@dynamic-labs/solana-extension";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { NotifierWrapper } from 'react-native-notifier';
-import { useColorScheme } from '@/components/useColorScheme';
+import { PrivyProvider } from "@privy-io/expo";
+import { PrivyElements } from "@privy-io/expo/ui";
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -55,14 +53,6 @@ export default function RootLayout() {
 
 const queryClient = new QueryClient()
 
-export const dynamicClient = createClient({
-  environmentId: "f33ab353-73ec-4664-b363-acac25b249eb",
-  appLogoUrl: "https://demo.dynamic.xyz/favicon-32x32.png",
-  appName: "StockPop",
-})
-  .extend(ReactNativeExtension())
-  .extend(SolanaExtension());
-
 
 function RootLayoutNav() {
   return (
@@ -70,11 +60,16 @@ function RootLayoutNav() {
       <ThemeProvider value={DarkTheme}>
         <GestureHandlerRootView style={{ flex: 1 }}>
           <NotifierWrapper>
-            <dynamicClient.reactNative.WebView />
-            <Stack>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-            </Stack>
+            <PrivyProvider
+              appId={process.env.EXPO_PUBLIC_PRIVY_APP_ID!}
+              clientId={process.env.EXPO_PUBLIC_PRIVY_CLIENT_ID!}
+            >
+              <Stack>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+              </Stack>
+              <PrivyElements />
+            </PrivyProvider>
           </NotifierWrapper>
         </GestureHandlerRootView>
       </ThemeProvider>

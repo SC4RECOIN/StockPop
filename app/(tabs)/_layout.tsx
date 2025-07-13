@@ -2,12 +2,12 @@ import React from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Link, Tabs } from 'expo-router';
 import { Pressable } from 'react-native';
-
 import Colors from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
+import { usePrivy } from '@privy-io/expo';
 
-// You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
+
+// https://icons.expo.fyi/
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
   color: string;
@@ -16,23 +16,24 @@ function TabBarIcon(props: {
 }
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  const { user } = usePrivy();
+  console.log('User:', user);
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: Colors['dark'].tint,
         // Disable the static render of the header on web
         // to prevent a hydration error in React Navigation v6.
         headerShown: useClientOnlyValue(false, true),
         headerStyle: {
-          backgroundColor: Colors[colorScheme ?? 'light'].background,
+          backgroundColor: Colors['dark'].background,
         },
         headerTitleAlign: 'center',
         tabBarStyle: {
-          backgroundColor: Colors[colorScheme ?? 'light'].background,
+          backgroundColor: Colors['dark'].background,
           borderTopWidth: 1,
-          borderTopColor: Colors[colorScheme ?? 'light'].tabIconDefault,
+          borderTopColor: Colors['dark'].tabIconDefault,
         },
         tabBarShowLabel: false,
       }}>
@@ -41,20 +42,21 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color }) => <TabBarIcon name="area-chart" color={color} />,
-          headerRight: () => (
+          headerShown: !user ? false : true,
+          headerRight: user ? () => (
             <Link href="/modal" asChild>
               <Pressable>
                 {({ pressed }) => (
                   <FontAwesome
                     name="info-circle"
                     size={25}
-                    color={Colors[colorScheme ?? 'light'].text}
+                    color={Colors['dark'].text}
                     style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
                   />
                 )}
               </Pressable>
             </Link>
-          ),
+          ) : undefined,
         }}
       />
       <Tabs.Screen
