@@ -84,7 +84,8 @@ export default function DiscoverScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 15
+    paddingLeft: 15,
+    paddingRight: 15,
   },
   title: {
     fontSize: 24,

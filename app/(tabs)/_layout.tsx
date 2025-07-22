@@ -1,10 +1,11 @@
 import React from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { Octicons } from '@react-native-vector-icons/octicons';
 import { Link, Tabs } from 'expo-router';
 import { Pressable } from 'react-native';
-import Colors from '@/constants/Colors';
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 import { useWallet } from '@/components/useWallet';
+import { PlatformPressable } from '@react-navigation/elements';
 
 
 // https://icons.expo.fyi/
@@ -21,26 +22,33 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors['dark'].tint,
+        tabBarActiveTintColor: '#fff',
         // Disable the static render of the header on web
         // to prevent a hydration error in React Navigation v6.
         headerShown: useClientOnlyValue(false, true),
         headerStyle: {
-          backgroundColor: Colors['dark'].background,
+          backgroundColor: '#000',
         },
         headerTitleAlign: 'center',
         tabBarStyle: {
-          backgroundColor: Colors['dark'].background,
+          backgroundColor: '#0f0f0f',
           borderTopWidth: 1,
-          borderTopColor: Colors['dark'].tabIconDefault,
+          borderTopColor: '#ccc',
+          paddingTop: 5,
         },
         tabBarShowLabel: false,
+        tabBarButton: (props) => (
+          <PlatformPressable
+            {...props}
+            android_ripple={{ color: 'transparent' }}  // Disables the ripple effect for Android
+          />
+        ),
       }}>
       <Tabs.Screen
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => <TabBarIcon name="area-chart" color={color} />,
+          tabBarIcon: ({ color }) => <Octicons name="home" color={color} size={20} />,
           headerShown: useClientOnlyValue(false, connected),
           headerRight: () => (
             <Link href="/modal" asChild>
@@ -49,7 +57,6 @@ export default function TabLayout() {
                   <FontAwesome
                     name="info-circle"
                     size={25}
-                    color={Colors['dark'].text}
                     style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
                   />
                 )}
@@ -62,14 +69,14 @@ export default function TabLayout() {
         name="discover"
         options={{
           title: 'Discover',
-          tabBarIcon: ({ color }) => <TabBarIcon name="search" color={color} />,
+          tabBarIcon: ({ color }) => <Octicons name="search" color={color} size={20} />,
         }}
       />
       <Tabs.Screen
         name="swap"
         options={{
           title: 'Swap',
-          tabBarIcon: ({ color }) => <TabBarIcon name="retweet" color={color} />,
+          tabBarIcon: ({ color }) => <Octicons name="arrow-switch" color={color} size={20} />,
         }}
       />
     </Tabs>

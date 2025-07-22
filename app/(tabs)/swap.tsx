@@ -3,7 +3,7 @@ import { StyleSheet, TextInput, TouchableOpacity, FlatList, Image } from 'react-
 import { useState, useEffect } from 'react';
 import Modal from 'react-native-modal';
 import { Notifier } from 'react-native-notifier';
-
+import { Octicons } from '@react-native-vector-icons/octicons';
 import { Text, View } from '@/components/Themed';
 import { useApiClient } from '@/components/useApiClient';
 import { useQuery } from '@tanstack/react-query';
@@ -55,7 +55,10 @@ export default function SwapScreen() {
       )}
 
       <TouchableOpacity style={styles.tokenSelector} onPress={toggleModal}>
-        <Text style={styles.tokenText}>{selectedStock?.symbol}</Text>
+        <View style={styles.tokenSelectContainer}>
+          <Text style={styles.tokenText}>{selectedStock?.symbol}</Text>
+          <Octicons name="chevron-down" size={20} color="#FFFFFF" />
+        </View>
       </TouchableOpacity>
 
       <TextInput
@@ -115,6 +118,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 15,
   },
+  tokenSelectContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: '#1E1E1E',
+  },
   actionButton: {
     flex: 1,
     padding: 15,
@@ -135,8 +143,9 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: '#1E1E1E',
-    padding: 20,
+    padding: 10,
     borderRadius: 8,
+    height: '60%',
   },
   stockItem: {
     flexDirection: 'row',
