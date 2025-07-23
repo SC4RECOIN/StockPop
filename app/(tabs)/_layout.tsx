@@ -75,8 +75,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="swap"
         options={{
-          title: 'Swap',
           tabBarIcon: ({ color }) => <Octicons name="arrow-switch" color={color} size={20} />,
+          headerShown: false,
         }}
       />
     </Tabs>

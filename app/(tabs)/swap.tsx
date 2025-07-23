@@ -8,8 +8,10 @@ import { useApiClient } from '@/components/useApiClient';
 import { useQuery } from '@tanstack/react-query';
 import { getErrorAlert } from '@/components/utils';
 import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams } from 'expo-router';
 
 export default function SwapScreen() {
+  const { stockId } = useLocalSearchParams<{ stockId: string }>();
   const client = useApiClient();
   const { data, isLoading, error } = useQuery({ queryKey: ['stocks'], queryFn: () => client.stocks.tradable.query() });
   const stocks: BaseAsset[] = data?.pools.map(p => p.baseAsset) ?? [];
@@ -22,15 +24,27 @@ export default function SwapScreen() {
   const [actionType, setActionType] = useState<'buy' | 'sell' | null>(null);
 
   useEffect(() => {
-    if (stocks.length > 0 && !selectedStock) {
-      setSelectedStock(stocks[0]);
+    if (stocks.length > 0) {
+      if (stockId) {
+        // Find the stock with the matching ID from the URL parameters
+        const stockFromParams = stocks.find(stock => stock.id === stockId);
+        if (stockFromParams) {
+          setSelectedStock(stockFromParams);
+        } else if (!selectedStock) {
+          // Fallback to the first stock if the requested stock isn't found
+          setSelectedStock(stocks[0]);
+        }
+      } else if (!selectedStock) {
+        // If no stockId parameter, default to the first stock
+        setSelectedStock(stocks[0]);
+      }
     }
 
     if (error) {
       console.error('Error fetching stocks:', error);
       Notifier.showNotification(getErrorAlert(error, 'Error loading stocks'));
     }
-  }, [stocks, error]);
+  }, [stocks, stockId, error, selectedStock]);
 
   const filteredStocks = stocks.filter(stock => {
     const query = searchQuery.toLowerCase();
@@ -184,7 +198,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#1E1E1E',
     borderRadius: 8,
     padding: 10,
-    marginBottom: 25,
+    marginBottom: 30,
+    marginTop: 60,
   },
   searchIcon: {
     marginRight: 10,

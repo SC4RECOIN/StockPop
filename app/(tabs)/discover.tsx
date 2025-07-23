@@ -1,4 +1,4 @@
-import { StyleSheet, FlatList, Image, ActivityIndicator } from 'react-native';
+import { StyleSheet, FlatList, Image, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { View, Text } from '@/components/Themed';
 import Decimal from 'decimal.js';
 import { useQuery } from '@tanstack/react-query';
@@ -6,10 +6,12 @@ import { ApiTypes, useApiClient } from '@/components/useApiClient';
 import { useEffect } from 'react';
 import { Notifier } from 'react-native-notifier';
 import { getErrorAlert } from '@/components/utils';
+import { useRouter } from 'expo-router';
 
 type Pool = ApiTypes['stocks']['tradable']['pools'][number]
 
 export default function DiscoverScreen() {
+  const router = useRouter();
   const client = useApiClient();
   const { data, isLoading, error } = useQuery({ queryKey: ['stocks'], queryFn: () => client.stocks.tradable.query() })
 
@@ -29,8 +31,15 @@ export default function DiscoverScreen() {
       compactDisplay: 'short',
     }).format
 
+    const handleStockPress = () => {
+      router.push({
+        pathname: '/(tabs)/swap',
+        params: { stockId: asset.id }
+      });
+    };
+
     return (
-      <View style={styles.stockItem}>
+      <TouchableOpacity style={styles.stockItem} onPress={handleStockPress}>
         <Image
           source={{ uri: asset.icon }}
           style={styles.stockImage}
@@ -55,7 +64,7 @@ export default function DiscoverScreen() {
           <Text style={styles.ticker}>{formatter(asset.stockData.mcap)}</Text>
           <Text style={styles.name}>{formatter(asset.mcap)}</Text>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
