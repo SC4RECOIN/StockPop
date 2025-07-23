@@ -101,7 +101,7 @@ export default function DiscoverScreen() {
           <Text style={styles.name}>{formatter(asset.mcap)}</Text>
         </View>
 
-        <TouchableOpacity onPress={() => toggleFavorite(asset.id)}>
+        <TouchableOpacity onPress={() => toggleFavorite(asset.id)} style={styles.favoriteButton}>
           <Ionicons
             name={isFavorite(asset.id) ? 'star' : 'star-outline'}
             size={20}
@@ -205,6 +205,11 @@ const styles = StyleSheet.create({
   },
   favoriteIcon: {
     marginLeft: 10,
+  },
+  favoriteButton: {
+    padding: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   sectionHeader: {
     fontSize: 18,
