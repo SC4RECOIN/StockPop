@@ -3,20 +3,21 @@ import { StyleSheet, TextInput, TouchableOpacity, FlatList, Image } from 'react-
 import { useState, useEffect } from 'react';
 import Modal from 'react-native-modal';
 import { Notifier } from 'react-native-notifier';
-import { Octicons } from '@react-native-vector-icons/octicons';
 import { Text, View } from '@/components/Themed';
 import { useApiClient } from '@/components/useApiClient';
 import { useQuery } from '@tanstack/react-query';
 import { getErrorAlert } from '@/components/utils';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function SwapScreen() {
   const client = useApiClient();
   const { data, isLoading, error } = useQuery({ queryKey: ['stocks'], queryFn: () => client.stocks.tradable.query() });
   const stocks: BaseAsset[] = data?.pools.map(p => p.baseAsset) ?? [];
 
-  const [isModalVisible, setModalVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedStock, setSelectedStock] = useState<BaseAsset | null>(null);
   const [amount, setAmount] = useState('');
+  const [showResults, setShowResults] = useState(false);
 
   useEffect(() => {
     if (stocks.length > 0 && !selectedStock) {
@@ -29,23 +30,68 @@ export default function SwapScreen() {
     }
   }, [stocks, error]);
 
-  const toggleModal = () => setModalVisible(!isModalVisible);
+  const filteredStocks = stocks.filter(stock => {
+    const query = searchQuery.toLowerCase();
+    return stock.name.toLowerCase().includes(query) ||
+      stock.symbol.toLowerCase().includes(query);
+  });
 
   const handleStockSelect = (stock: BaseAsset) => {
     setSelectedStock(stock);
-    toggleModal();
+    setSearchQuery('');
+    setShowResults(false);
   };
 
   const renderStockItem = ({ item }: { item: BaseAsset }) => (
     <TouchableOpacity style={styles.stockItem} onPress={() => handleStockSelect(item)}>
       <Image source={{ uri: item.icon }} style={styles.stockImage} />
-      <Text style={styles.stockName}>{item.symbol}</Text>
+      <View style={styles.stockTextContainer}>
+        <Text style={styles.stockSymbol}>{item.symbol}</Text>
+        <Text style={styles.stockFullName}>{item.name}</Text>
+      </View>
     </TouchableOpacity>
   );
 
   return (
     <View style={styles.container}>
-      {selectedStock && (
+      <View style={styles.searchContainer}>
+        <Ionicons name="search" size={20} color="#FFFFFF" style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search stocks..."
+          placeholderTextColor="#888"
+          value={searchQuery}
+          onChangeText={(text) => {
+            setSearchQuery(text);
+            setShowResults(text.length > 0);
+          }}
+          onFocus={() => setShowResults(true)}
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity
+            onPress={() => {
+              setSearchQuery('');
+              setShowResults(false);
+            }}
+            style={styles.clearButton}
+          >
+            <Ionicons name="close-circle" size={20} color="#888" />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {showResults && (
+        <View style={styles.resultsContainer}>
+          <FlatList
+            data={filteredStocks}
+            keyExtractor={(item) => item.id}
+            renderItem={renderStockItem}
+            style={styles.resultsList}
+          />
+        </View>
+      )}
+
+      {selectedStock && !showResults && (
         <View style={styles.stockDetails}>
           <Image source={{ uri: selectedStock.icon }} style={styles.stockImageLarge} />
           <Text style={styles.stockNameLarge}>{selectedStock.name}</Text>
@@ -53,13 +99,6 @@ export default function SwapScreen() {
           <Text style={styles.stockMcap}>Market Cap: ${selectedStock.mcap.toLocaleString()}</Text>
         </View>
       )}
-
-      <TouchableOpacity style={styles.tokenSelector} onPress={toggleModal}>
-        <View style={styles.tokenSelectContainer}>
-          <Text style={styles.tokenText}>{selectedStock?.symbol}</Text>
-          <Octicons name="chevron-down" size={20} color="#FFFFFF" />
-        </View>
-      </TouchableOpacity>
 
       <TextInput
         style={styles.input}
@@ -77,16 +116,6 @@ export default function SwapScreen() {
           <Text style={styles.actionButtonText}>Sell</Text>
         </TouchableOpacity>
       </View>
-
-      <Modal isVisible={isModalVisible} onBackdropPress={toggleModal}>
-        <View style={styles.modalContent}>
-          <FlatList
-            data={stocks}
-            keyExtractor={(item) => item.id}
-            renderItem={renderStockItem}
-          />
-        </View>
-      </Modal>
     </View>
   );
 }
@@ -94,17 +123,37 @@ export default function SwapScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 15,
+    paddingLeft: 10,
+    paddingRight: 10,
   },
-  tokenSelector: {
-    padding: 15,
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#1E1E1E',
     borderRadius: 8,
-    marginBottom: 15,
+    padding: 10,
+    marginBottom: 25,
   },
-  tokenText: {
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
     color: '#FFFFFF',
     fontSize: 16,
+    padding: 5,
+  },
+  clearButton: {
+    padding: 5,
+  },
+  resultsContainer: {
+    backgroundColor: '#1E1E1E',
+    borderRadius: 8,
+    maxHeight: 300,
+    marginBottom: 15,
+  },
+  resultsList: {
+    maxHeight: 300,
   },
   input: {
     padding: 15,
@@ -117,11 +166,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 15,
-  },
-  tokenSelectContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: '#1E1E1E',
   },
   actionButton: {
     flex: 1,
@@ -141,12 +185,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  modalContent: {
-    backgroundColor: '#1E1E1E',
-    padding: 10,
-    borderRadius: 8,
-    height: '60%',
-  },
   stockItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -159,9 +197,22 @@ const styles = StyleSheet.create({
     height: 30,
     marginRight: 10,
   },
+  stockTextContainer: {
+    flex: 1,
+    backgroundColor: '#1E1E1E',
+  },
   stockName: {
     color: '#FFFFFF',
     fontSize: 16,
+  },
+  stockSymbol: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  stockFullName: {
+    color: '#999',
+    fontSize: 14,
   },
   stockDetails: {
     alignItems: 'center',
