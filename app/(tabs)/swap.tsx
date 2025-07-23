@@ -171,9 +171,16 @@ export default function SwapScreen() {
 
       {selectedStock && !showResults && (
         <View style={styles.stockDetails}>
-          <Image source={{ uri: selectedStock.icon }} style={styles.stockImageLarge} />
-          <Text style={styles.stockNameLarge}>{selectedStock.name}</Text>
-          <Text style={styles.stockPrice}>Price: ${selectedStock.stockData.price.toFixed(2)}</Text>
+          <View style={styles.stockHeader}>
+            <View style={styles.stockHeaderLeft}>
+              <Image source={{ uri: selectedStock.icon }} style={styles.stockImageLarge} />
+              <Text style={styles.stockSymbolLarge}>{selectedStock.symbol}</Text>
+            </View>
+            <View style={styles.stockHeaderRight}>
+              <Text style={styles.stockPriceLarge}>$ {selectedStock.stockData.price.toFixed(2)} <Text style={{ fontSize: 16 }}>USD</Text></Text>
+              <Text style={styles.stockChange24h}>+ {0.44.toFixed(2)}%</Text>
+            </View>
+          </View>
         </View>
       )}
 
@@ -359,27 +366,39 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   stockDetails: {
-    alignItems: 'center',
     marginBottom: 15,
   },
-  stockImageLarge: {
-    width: 50,
-    height: 50,
+  stockHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 10,
   },
-  stockNameLarge: {
+  stockHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  stockHeaderRight: {
+    alignItems: 'flex-end',
+  },
+  stockImageLarge: {
+    width: 60,
+    height: 60,
+    marginRight: 10,
+  },
+  stockSymbolLarge: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  stockPriceLarge: {
+    color: '#FFFFFF',
+    fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 5,
   },
-  stockPrice: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    marginBottom: 5,
-  },
-  stockMcap: {
-    color: '#FFFFFF',
+  stockChange24h: {
+    color: 'lightgreen',
     fontSize: 16,
   },
   modalContent: {
