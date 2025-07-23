@@ -1,6 +1,6 @@
 import { BaseAsset } from '@/api/src/models';
 import { StyleSheet, TextInput, TouchableOpacity, FlatList, Image, ScrollView, Animated } from 'react-native';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Modal from 'react-native-modal';
 import { Notifier } from 'react-native-notifier';
 import { Text, View } from '@/components/Themed';
@@ -9,6 +9,8 @@ import { useQuery } from '@tanstack/react-query';
 import { getErrorAlert } from '@/components/utils';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function SwapScreen() {
   const { stockId } = useLocalSearchParams<{ stockId: string }>();
@@ -24,6 +26,29 @@ export default function SwapScreen() {
   const [actionType, setActionType] = useState<'buy' | 'sell' | null>(null);
   const [selectedTab, setSelectedTab] = useState('summary');
   const [tabAnimation] = useState(new Animated.Value(0));
+  const [favorites, setFavorites] = useState<string[]>([]);
+
+  useEffect(() => {
+    const loadFavorites = async () => {
+      const storedFavorites = await AsyncStorage.getItem('favorites');
+      if (storedFavorites) {
+        setFavorites(JSON.parse(storedFavorites));
+      }
+    };
+    loadFavorites();
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      const loadFavorites = async () => {
+        const storedFavorites = await AsyncStorage.getItem('favorites');
+        if (storedFavorites) {
+          setFavorites(JSON.parse(storedFavorites));
+        }
+      };
+      loadFavorites();
+    }, [])
+  );
 
   useEffect(() => {
     if (stocks.length > 0) {
@@ -75,6 +100,17 @@ export default function SwapScreen() {
     console.log(`${actionType} ${amount} of ${selectedStock?.symbol}`);
     closeActionModal();
   };
+
+  const toggleFavorite = async (stockId: string) => {
+    const updatedFavorites = favorites.includes(stockId)
+      ? favorites.filter(id => id !== stockId)
+      : [...favorites, stockId];
+
+    setFavorites(updatedFavorites);
+    await AsyncStorage.setItem('favorites', JSON.stringify(updatedFavorites));
+  };
+
+  const isFavorite = (stockId: string) => favorites.includes(stockId);
 
   const renderStockItem = ({ item, index }: { item: BaseAsset; index: number }) => (
     <TouchableOpacity
@@ -154,6 +190,16 @@ export default function SwapScreen() {
             style={styles.clearButton}
           >
             <Ionicons name="close-circle" size={20} color="#888" />
+          </TouchableOpacity>
+        )}
+        {selectedStock && (
+          <TouchableOpacity onPress={() => toggleFavorite(selectedStock.id)}>
+            <Ionicons
+              name={isFavorite(selectedStock.id) ? 'star' : 'star-outline'}
+              size={24}
+              color={isFavorite(selectedStock.id) ? '#FFD700' : '#FFFFFF'}
+              style={styles.favoriteIcon}
+            />
           </TouchableOpacity>
         )}
       </View>
@@ -475,5 +521,8 @@ const styles = StyleSheet.create({
   newsText: {
     color: '#FFFFFF',
     fontSize: 16,
+  },
+  favoriteIcon: {
+    marginLeft: 10,
   },
 });
