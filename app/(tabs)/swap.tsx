@@ -1,5 +1,5 @@
 import { BaseAsset } from '@/api/src/models';
-import { StyleSheet, TextInput, TouchableOpacity, FlatList, Image } from 'react-native';
+import { StyleSheet, TextInput, TouchableOpacity, FlatList, Image, ScrollView, Animated } from 'react-native';
 import { useState, useEffect } from 'react';
 import Modal from 'react-native-modal';
 import { Notifier } from 'react-native-notifier';
@@ -22,6 +22,8 @@ export default function SwapScreen() {
   const [showResults, setShowResults] = useState(false);
   const [actionModalVisible, setActionModalVisible] = useState(false);
   const [actionType, setActionType] = useState<'buy' | 'sell' | null>(null);
+  const [selectedTab, setSelectedTab] = useState('summary');
+  const [tabAnimation] = useState(new Animated.Value(0));
 
   useEffect(() => {
     if (stocks.length > 0) {
@@ -90,6 +92,44 @@ export default function SwapScreen() {
     </TouchableOpacity>
   );
 
+  const TabSection = ({ selectedTab }: { selectedTab: string }) => {
+    if (selectedTab === 'summary') {
+      return (
+        <View style={styles.tabContentContainer}>
+          <Text style={styles.tabContent}>Previous Close: $123.45</Text>
+          <Text style={styles.tabContent}>Market Cap: $1.23B</Text>
+          <Text style={styles.tabContent}>Volume: 1.2M</Text>
+        </View>
+      );
+    } else if (selectedTab === 'news') {
+      return (
+        <View style={styles.tabContentContainer}>
+          <View style={styles.newsTile}><Text style={styles.newsText}>News Story 1</Text></View>
+          <View style={styles.newsTile}><Text style={styles.newsText}>News Story 2</Text></View>
+          <View style={styles.newsTile}><Text style={styles.newsText}>News Story 3</Text></View>
+        </View>
+      );
+    } else if (selectedTab === 'profile') {
+      return (
+        <View style={styles.tabContentContainer}>
+          <Text style={styles.tabContent}>This is a description of the company.</Text>
+        </View>
+      );
+    }
+    return null;
+  };
+
+  const handleTabPress = (tab: string) => {
+    setSelectedTab(tab);
+    Animated.timing(tabAnimation, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: false,
+    }).start(() => {
+      tabAnimation.setValue(0);
+    });
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.searchContainer}>
@@ -134,9 +174,34 @@ export default function SwapScreen() {
           <Image source={{ uri: selectedStock.icon }} style={styles.stockImageLarge} />
           <Text style={styles.stockNameLarge}>{selectedStock.name}</Text>
           <Text style={styles.stockPrice}>Price: ${selectedStock.stockData.price.toFixed(2)}</Text>
-          <Text style={styles.stockMcap}>Market Cap: ${selectedStock.mcap.toLocaleString()}</Text>
         </View>
       )}
+
+      <View style={styles.tabContainer}>
+        {['summary', 'news', 'profile'].map((tab) => (
+          <TouchableOpacity
+            key={tab}
+            style={[
+              styles.tabButton,
+              selectedTab === tab && styles.activeTabButton,
+            ]}
+            onPress={() => handleTabPress(tab)}
+          >
+            <Animated.Text
+              style={[
+                styles.tabButtonText,
+                selectedTab === tab && styles.activeTabButtonText,
+              ]}
+            >
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </Animated.Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <ScrollView style={styles.tabContentScrollView}>
+        <TabSection selectedTab={selectedTab} />
+      </ScrollView>
 
       <View style={styles.buttonContainer}>
         <TouchableOpacity
@@ -341,5 +406,55 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     backgroundColor: '#1E1E1E',
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 20,
+  },
+  tabButton: {
+    flex: 1,
+    alignItems: 'center',
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: 'transparent',
+  },
+  activeTabButton: {
+    backgroundColor: '#FFFFFF',
+  },
+  tabButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  activeTabButtonText: {
+    color: '#000000',
+  },
+  tabContentScrollView: {
+    flex: 1,
+  },
+  tabContentContainer: {
+  },
+  tabTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  tabContent: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    marginBottom: 5,
+  },
+  newsTile: {
+    padding: 15,
+    borderRadius: 8,
+    borderColor: '#333',
+    borderWidth: 1,
+    marginBottom: 15,
+  },
+  newsText: {
+    color: '#FFFFFF',
+    fontSize: 16,
   },
 });
