@@ -197,7 +197,7 @@ export default function SwapScreen() {
             <Ionicons
               name={isFavorite(selectedStock.id) ? 'star' : 'star-outline'}
               size={24}
-              color={isFavorite(selectedStock.id) ? '#FFD700' : '#FFFFFF'}
+              color={isFavorite(selectedStock.id) ? '#FFFFFF' : '#666'}
               style={styles.favoriteIcon}
             />
           </TouchableOpacity>
@@ -220,7 +220,10 @@ export default function SwapScreen() {
           <View style={styles.stockHeader}>
             <View style={styles.stockHeaderLeft}>
               <Image source={{ uri: selectedStock.icon }} style={styles.stockImageLarge} />
-              <Text style={styles.stockSymbolLarge}>{selectedStock.symbol}</Text>
+              <View>
+                <Text>{selectedStock.name.replace("xStock", "")}</Text>
+                <Text style={styles.stockSymbolLarge}>{selectedStock.symbol}</Text>
+              </View>
             </View>
             <View style={styles.stockHeaderRight}>
               <Text style={styles.stockPriceLarge}>$ {selectedStock.stockData.price.toFixed(2)} <Text style={{ fontSize: 16 }}>USD</Text></Text>

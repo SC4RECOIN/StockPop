@@ -1,4 +1,4 @@
-import { StyleSheet, FlatList, Image, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { StyleSheet, FlatList, Image, ActivityIndicator, TouchableOpacity, SectionList } from 'react-native';
 import { View, Text } from '@/components/Themed';
 import Decimal from 'decimal.js';
 import { useQuery } from '@tanstack/react-query';
@@ -16,7 +16,7 @@ type Pool = ApiTypes['stocks']['tradable']['pools'][number]
 export default function DiscoverScreen() {
   const router = useRouter();
   const client = useApiClient();
-  const { data, isLoading, error } = useQuery({ queryKey: ['stocks'], queryFn: () => client.stocks.tradable.query() })
+  const { data, isLoading, error } = useQuery({ queryKey: ['stocks'], queryFn: () => client.stocks.tradable.query() });
   const [favorites, setFavorites] = useState<string[]>([]);
 
   useEffect(() => {
@@ -66,21 +66,18 @@ export default function DiscoverScreen() {
     const formatter = new Intl.NumberFormat('en-US', {
       notation: 'compact',
       compactDisplay: 'short',
-    }).format
+    }).format;
 
     const handleStockPress = () => {
       router.push({
         pathname: '/(tabs)/swap',
-        params: { stockId: asset.id }
+        params: { stockId: asset.id },
       });
     };
 
     return (
       <TouchableOpacity style={styles.stockItem} onPress={handleStockPress}>
-        <Image
-          source={{ uri: asset.icon }}
-          style={styles.stockImage}
-        />
+        <Image source={{ uri: asset.icon }} style={styles.stockImage} />
 
         <View style={styles.stockInfo}>
           <Text style={styles.ticker}>{asset.symbol}</Text>
@@ -89,10 +86,12 @@ export default function DiscoverScreen() {
 
         <View style={styles.priceContainer}>
           <Text style={styles.price}>${asset.stockData.price.toFixed(2)}</Text>
-          <Text style={[
-            styles.change,
-            { color: priceChange.isPositive() ? '#4CAF50' : '#F44336' }
-          ]}>
+          <Text
+            style={[
+              styles.change,
+              { color: priceChange.isPositive() ? '#4CAF50' : '#F44336' },
+            ]}
+          >
             {priceChange.toFixed(2)}%
           </Text>
         </View>
@@ -114,7 +113,9 @@ export default function DiscoverScreen() {
     );
   };
 
-  const pools = data?.pools.sort((a, b) => b.baseAsset.stockData.price - a.baseAsset.stockData.price) ?? []
+  const favoritesData = data?.pools.filter(pool => favorites.includes(pool.baseAsset.id)) ?? [];
+  const stocksData = data?.pools.filter(pool => !pool.baseAsset.tags.includes('ETF') && !favorites.includes(pool.baseAsset.id)) ?? [];
+  const etfsData = data?.pools.filter(pool => pool.baseAsset.tags.includes('ETF') && !favorites.includes(pool.baseAsset.id)) ?? [];
 
   return (
     <View style={styles.container}>
@@ -124,10 +125,17 @@ export default function DiscoverScreen() {
           <Text style={styles.loadingText}>Loading stocks...</Text>
         </View>
       ) : (
-        <FlatList
-          data={pools}
+        <SectionList
+          sections={[
+            { title: 'Favorites', data: favoritesData.sort((a, b) => b.baseAsset.stockData.mcap - a.baseAsset.stockData.mcap) },
+            { title: 'Stocks', data: stocksData.sort((a, b) => b.baseAsset.stockData.mcap - a.baseAsset.stockData.mcap) },
+            { title: 'ETFs', data: etfsData.sort((a, b) => b.baseAsset.stockData.mcap - a.baseAsset.stockData.mcap) },
+          ]}
           keyExtractor={(item) => item.id}
-          renderItem={renderStockItem}
+          renderItem={({ item }) => renderStockItem({ item })}
+          renderSectionHeader={({ section: { title } }) => (
+            <Text style={styles.sectionHeader}>{title}</Text>
+          )}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
         />
@@ -197,5 +205,10 @@ const styles = StyleSheet.create({
   },
   favoriteIcon: {
     marginLeft: 10,
+  },
+  sectionHeader: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginVertical: 10,
   },
 });
