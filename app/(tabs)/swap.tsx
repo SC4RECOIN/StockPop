@@ -18,6 +18,8 @@ export default function SwapScreen() {
   const [selectedStock, setSelectedStock] = useState<BaseAsset | null>(null);
   const [amount, setAmount] = useState('');
   const [showResults, setShowResults] = useState(false);
+  const [actionModalVisible, setActionModalVisible] = useState(false);
+  const [actionType, setActionType] = useState<'buy' | 'sell' | null>(null);
 
   useEffect(() => {
     if (stocks.length > 0 && !selectedStock) {
@@ -42,8 +44,30 @@ export default function SwapScreen() {
     setShowResults(false);
   };
 
-  const renderStockItem = ({ item }: { item: BaseAsset }) => (
-    <TouchableOpacity style={styles.stockItem} onPress={() => handleStockSelect(item)}>
+  const handleActionPress = (type: 'buy' | 'sell') => {
+    setActionType(type);
+    setActionModalVisible(true);
+  };
+
+  const closeActionModal = () => {
+    setActionModalVisible(false);
+    setAmount('');
+  };
+
+  const handleAction = () => {
+    // Here you would implement the actual buy/sell logic
+    console.log(`${actionType} ${amount} of ${selectedStock?.symbol}`);
+    closeActionModal();
+  };
+
+  const renderStockItem = ({ item, index }: { item: BaseAsset; index: number }) => (
+    <TouchableOpacity
+      style={[
+        styles.stockItem,
+        index === filteredStocks.length - 1 ? styles.lastStockItem : null
+      ]}
+      onPress={() => handleStockSelect(item)}
+    >
       <Image source={{ uri: item.icon }} style={styles.stockImage} />
       <View style={styles.stockTextContainer}>
         <Text style={styles.stockSymbol}>{item.symbol}</Text>
@@ -100,23 +124,50 @@ export default function SwapScreen() {
         </View>
       )}
 
-      <TextInput
-        style={styles.input}
-        placeholder="Enter amount"
-        keyboardType="numeric"
-        value={amount}
-        onChangeText={setAmount}
-      />
-
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={[styles.actionButton, styles.buyButton]}>
-          <Text style={styles.actionButtonText}>Buy</Text>
+        <TouchableOpacity
+          style={[styles.actionButton, styles.buyButton]}
+          onPress={() => handleActionPress('buy')}
+        >
+          <Text style={styles.buyButtonText}>Buy</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.actionButton, styles.sellButton]}>
+        <TouchableOpacity
+          style={[styles.actionButton, styles.sellButton]}
+          onPress={() => handleActionPress('sell')}
+        >
           <Text style={styles.actionButtonText}>Sell</Text>
         </TouchableOpacity>
       </View>
-    </View>
+
+      <Modal isVisible={actionModalVisible} onBackdropPress={closeActionModal}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>
+            {selectedStock?.symbol}
+          </Text>
+          <TextInput
+            style={styles.modalInput}
+            placeholder="Enter amount"
+            placeholderTextColor="#888"
+            keyboardType="numeric"
+            value={amount}
+            onChangeText={setAmount}
+            autoFocus
+          />
+          <View style={styles.modalButtonContainer}>
+            <TouchableOpacity style={[styles.actionButton, styles.sellButton]} onPress={closeActionModal}>
+              <Text style={styles.actionButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.buyButton]}
+              onPress={handleAction}
+              disabled={!amount}
+            >
+              <Text style={styles.buyButtonText}>{actionType === 'buy' ? 'Buy' : 'Sell'}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal >
+    </View >
   );
 }
 
@@ -125,6 +176,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingLeft: 10,
     paddingRight: 10,
+    position: 'relative',
   },
   searchContainer: {
     flexDirection: 'row',
@@ -165,23 +217,32 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 15,
+    position: 'absolute',
+    bottom: 20,
+    left: 10,
+    right: 10,
   },
   actionButton: {
     flex: 1,
     padding: 15,
-    borderRadius: 8,
+    borderRadius: 16,
     alignItems: 'center',
     marginHorizontal: 5,
   },
   buyButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#FFFFFF',
   },
   sellButton: {
-    backgroundColor: '#F44336',
+    borderColor: '#FFFFFF',
+    borderWidth: 1,
   },
   actionButtonText: {
     color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  buyButtonText: {
+    color: '#000000',
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -191,6 +252,9 @@ const styles = StyleSheet.create({
     padding: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#333',
+  },
+  lastStockItem: {
+    borderBottomWidth: 0,
   },
   stockImage: {
     width: 30,
@@ -237,5 +301,30 @@ const styles = StyleSheet.create({
   stockMcap: {
     color: '#FFFFFF',
     fontSize: 16,
+  },
+  modalContent: {
+    backgroundColor: '#1E1E1E',
+    padding: 20,
+    borderRadius: 8,
+  },
+  modalTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  modalInput: {
+    padding: 15,
+    backgroundColor: '#2E2E2E',
+    borderRadius: 8,
+    color: '#FFFFFF',
+    marginBottom: 15,
+    fontSize: 16,
+  },
+  modalButtonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: '#1E1E1E',
   },
 });
