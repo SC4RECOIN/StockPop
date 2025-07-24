@@ -114,8 +114,8 @@ export default function DiscoverScreen() {
   };
 
   const favoritesData = data?.pools.filter(pool => favorites.includes(pool.baseAsset.id)) ?? [];
-  const stocksData = data?.pools.filter(pool => !pool.baseAsset.tags.includes('ETF') && !favorites.includes(pool.baseAsset.id)) ?? [];
-  const etfsData = data?.pools.filter(pool => pool.baseAsset.tags.includes('ETF') && !favorites.includes(pool.baseAsset.id)) ?? [];
+  const stocksData = data?.pools.filter(pool => pool.baseAsset.category === 'stock' && !favorites.includes(pool.baseAsset.id)) ?? [];
+  const etfsData = data?.pools.filter(pool => pool.baseAsset.category === 'etf' && !favorites.includes(pool.baseAsset.id)) ?? [];
 
   return (
     <View style={styles.container}>

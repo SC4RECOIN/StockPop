@@ -28,10 +28,12 @@ export const appRouter = router({
         try {
           const response: AxiosResponse<StocksResponse> = await axios.get(STOCKS_URL);
 
-          // add category and description
+          // add additional properties to each asset
           response.data.pools.map(pool => {
-            pool.baseAsset.category = ETFs.includes(pool.baseAsset.id) ? 'etf' : 'stock';
-            pool.baseAsset.description = stockDescriptions[pool.baseAsset.symbol] ?? '';
+            pool.baseAsset.category = ETFs.includes(pool.baseAsset.symbol) ? 'etf' : 'stock';
+            pool.baseAsset.description = stockDescriptions[pool.baseAsset.symbol] ?? 'No description available';
+            pool.baseAsset.sector = pool.baseAsset.sector;
+            pool.baseAsset.industry = pool.baseAsset.industry;
             return pool
           });
 

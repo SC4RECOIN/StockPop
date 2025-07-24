@@ -21,7 +21,9 @@ export interface BaseAsset {
     symbol: string
     icon: string
     description: string
-    category: 'stock' | 'etf' | 'leveraged' | 'other'
+    category: 'stock' | 'etf' | 'leveraged' | 'other',
+    sector?: string
+    industry?: string
     decimals: number
     dev: string
     circSupply: number
