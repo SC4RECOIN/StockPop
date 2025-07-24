@@ -20,6 +20,8 @@ export interface BaseAsset {
     name: string
     symbol: string
     icon: string
+    description: string
+    category: 'stock' | 'etf' | 'leveraged' | 'other'
     decimals: number
     dev: string
     circSupply: number
