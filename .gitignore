@@ -43,3 +43,5 @@ api/openapitools.json
 api/client/.openapi-generator
 api/client/.openapi-generator-ignore
 api/server/go/README.md
+
+api/src/keys.json

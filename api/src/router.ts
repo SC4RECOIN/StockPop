@@ -2,7 +2,7 @@ import { initTRPC, TRPCError } from '@trpc/server';
 import axios, { AxiosError, AxiosResponse } from 'axios';
 import { StocksResponse } from './models';
 import NodeCache from 'node-cache';
-import { stockDescriptions } from './descriptions';
+import { stockDescriptions, stockIndustries, stockSectors } from './descriptions';
 
 const STOCKS_URL = "https://datapi.jup.ag/v1/pools/xstocks/24h"
 const cache = new NodeCache({ stdTTL: 60 });
@@ -32,8 +32,8 @@ export const appRouter = router({
           response.data.pools.map(pool => {
             pool.baseAsset.category = ETFs.includes(pool.baseAsset.symbol) ? 'etf' : 'stock';
             pool.baseAsset.description = stockDescriptions[pool.baseAsset.symbol] ?? 'No description available';
-            pool.baseAsset.sector = pool.baseAsset.sector;
-            pool.baseAsset.industry = pool.baseAsset.industry;
+            pool.baseAsset.sector = stockSectors[pool.baseAsset.symbol]
+            pool.baseAsset.industry = stockIndustries[pool.baseAsset.symbol]
             return pool
           });
 

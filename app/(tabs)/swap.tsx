@@ -148,7 +148,13 @@ export default function SwapScreen() {
     } else if (selectedTab === 'profile') {
       return (
         <View style={styles.tabContentContainer}>
-          <Text style={styles.tabContent}>This is a description of the company.</Text>
+          <View style={styles.pillContainer}>
+            {selectedStock?.sector && <Text style={styles.pill}>{selectedStock?.sector}</Text>}
+            {selectedStock?.industry && <Text style={styles.pill}>{selectedStock?.industry}</Text>}
+          </View>
+          <Text style={[styles.tabContent, styles.profileDescription]}>
+            {selectedStock?.description}
+          </Text>
         </View>
       );
     }
@@ -353,10 +359,7 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    position: 'absolute',
-    bottom: 20,
-    left: 10,
-    right: 10,
+    marginVertical: 20,
   },
   actionButton: {
     flex: 1,
@@ -527,5 +530,25 @@ const styles = StyleSheet.create({
   },
   favoriteIcon: {
     marginLeft: 10,
+  },
+  profileDescription: {
+    fontSize: 16,
+    lineHeight: 24,
+    marginBottom: 10,
+  },
+  pillContainer: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  pill: {
+    backgroundColor: '#2E2E2E',
+    color: '#FFFFFF',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    fontSize: 14,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginRight: 10,
   },
 });
