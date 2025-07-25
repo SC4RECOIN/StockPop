@@ -3,8 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev:server": "tsx watch src/server",
-    "dev:client": "wait-port 3000 && tsx watch src/client",
+    "dev:server": "node --env-file=.env --import=tsx --watch src/server",
     "dev": "run-p dev:* --print-label",
     "lint": "eslint --cache src",
     "type-check": "tsc",
@@ -14,11 +13,12 @@
     "test-start": "start-server-and-test 'node dist/server' 3000 'node dist/client'"
   },
   "dependencies": {
+    "@polygon.io/client-js": "^8.0.0",
     "@trpc/client": "npm:@trpc/client",
     "@trpc/react-query": "npm:@trpc/react-query",
     "@trpc/server": "npm:@trpc/server",
-    "axios": "^1.10.0",
     "express": "^5.0.0",
+    "ky": "^1.8.2",
     "node-cache": "^5.1.2",
     "zod": "^3.25.51"
   },

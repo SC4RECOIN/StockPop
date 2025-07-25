@@ -1,21 +1,29 @@
 import { initTRPC, TRPCError } from '@trpc/server';
-import axios, { AxiosError, AxiosResponse } from 'axios';
 import { StocksResponse } from './models';
+import { GetOptionsOpenClose200Response, ListNews200ResponseResultsInner, restClient } from '@polygon.io/client-js';
 import NodeCache from 'node-cache';
+import ky from 'ky';
+import { z } from 'zod';
 import { stockDescriptions, stockIndustries, stockSectors } from './descriptions';
 
 const STOCKS_URL = "https://datapi.jup.ag/v1/pools/xstocks/24h"
 const cache = new NodeCache({ stdTTL: 60 });
+
+// cache keys
 const stocksKey = 'stocks';
+const newsKey = (ticker: string) => `news:${ticker}`;
+const summaryKey = (ticker: string) => `summary:${ticker}`;
 
 const t = initTRPC.create();
 const publicProcedure = t.procedure;
 const router = t.router;
 
+const polySDK = restClient(process.env.POLYGON_API_KEY!);
+
 const ETFs = ['SPYx', 'QQQx', 'GLDx']
 
 // Avoid 403 on Jupiter
-axios.defaults.headers.common['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36';
+const fetch = ky.create({ headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36' } });
 
 export const appRouter = router({
   stocks: {
@@ -26,10 +34,10 @@ export const appRouter = router({
         }
 
         try {
-          const response: AxiosResponse<StocksResponse> = await axios.get(STOCKS_URL);
+          const response = await fetch(STOCKS_URL).json<StocksResponse>();
 
           // add additional properties to each asset
-          response.data.pools.map(pool => {
+          response.pools = response.pools.map(pool => {
             pool.baseAsset.category = ETFs.includes(pool.baseAsset.symbol) ? 'etf' : 'stock';
             pool.baseAsset.description = stockDescriptions[pool.baseAsset.symbol] ?? 'No description available';
             pool.baseAsset.sector = stockSectors[pool.baseAsset.symbol]
@@ -37,11 +45,11 @@ export const appRouter = router({
             return pool
           });
 
-          cache.set(stocksKey, response.data);
+          cache.set(stocksKey, response);
 
-          return response.data
+          return response
         } catch (error: any) {
-          console.error('Error fetching stock data:', error.response?.status, error.response?.data);
+          console.error('Error fetching stock data:', error);
 
           throw new TRPCError({
             code: 'INTERNAL_SERVER_ERROR',
@@ -50,7 +58,55 @@ export const appRouter = router({
           });
         }
       }),
+    news: publicProcedure.input(z.string())
+      .query(async ({ input }) => {
+        input = trimTicker(input);
+
+        if (cache.has(newsKey(input))) {
+          const news = cache.get<Array<ListNews200ResponseResultsInner>>(newsKey(input))!;
+          return { news };
+        }
+
+        const response = await polySDK.listNews(input)
+
+        if (response.results) {
+          // cache the news results for 5 minutes
+          cache.set(newsKey(input), response.results ?? [], 300);
+        }
+
+        return { news: response.results ?? [] };
+      }),
+    summary: publicProcedure.input(z.string())
+      .query(async ({ input }) => {
+        input = trimTicker(input);
+
+        if (cache.has(summaryKey(input))) {
+          const news = cache.get<GetOptionsOpenClose200Response>(summaryKey(input))!;
+          return { news };
+        }
+
+        const response = await polySDK.getStocksOpenClose(input, getCurrentDate(), true)
+        cache.set(summaryKey(input), response);
+
+        return response;
+      })
   },
 });
+
+function trimTicker(ticker: string): string {
+  // get rid of the 'x' at the end of the symbol if it exists (xStocks)
+  if (ticker.endsWith('x')) {
+    return ticker.slice(0, -1);
+  }
+  return ticker;
+}
+
+const getCurrentDate = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 export type AppRouter = typeof appRouter;

@@ -1,5 +1,5 @@
 import { BaseAsset } from '@/api/src/models';
-import { StyleSheet, TextInput, TouchableOpacity, FlatList, Image, ScrollView, Animated } from 'react-native';
+import { StyleSheet, TextInput, TouchableOpacity, FlatList, Image, ScrollView, Animated, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { useState, useEffect, useCallback } from 'react';
 import Modal from 'react-native-modal';
 import { Notifier } from 'react-native-notifier';
@@ -52,18 +52,20 @@ export default function SwapScreen() {
 
   useEffect(() => {
     if (stocks.length > 0) {
-      if (stockId) {
-        // Find the stock with the matching ID from the URL parameters
-        const stockFromParams = stocks.find(stock => stock.id === stockId);
-        if (stockFromParams) {
-          setSelectedStock(stockFromParams);
+      if (!selectedStock) {
+        if (stockId) {
+          // Find the stock with the matching ID from the URL parameters
+          const stockFromParams = stocks.find(stock => stock.id === stockId);
+          if (stockFromParams) {
+            setSelectedStock(stockFromParams);
+          } else if (!selectedStock) {
+            // Fallback to the first stock if the requested stock isn't found
+            setSelectedStock(stocks[0]);
+          }
         } else if (!selectedStock) {
-          // Fallback to the first stock if the requested stock isn't found
+          // If no stockId parameter, default to the first stock
           setSelectedStock(stocks[0]);
         }
-      } else if (!selectedStock) {
-        // If no stockId parameter, default to the first stock
-        setSelectedStock(stocks[0]);
       }
     }
 
@@ -80,6 +82,7 @@ export default function SwapScreen() {
   });
 
   const handleStockSelect = (stock: BaseAsset) => {
+    Keyboard.dismiss();
     setSelectedStock(stock);
     setSearchQuery('');
     setShowResults(false);
@@ -173,142 +176,145 @@ export default function SwapScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20} color="#FFFFFF" style={styles.searchIcon} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search stocks..."
-          placeholderTextColor="#888"
-          value={searchQuery}
-          onChangeText={(text) => {
-            setSearchQuery(text);
-            setShowResults(text.length > 0);
-          }}
-          onFocus={() => setShowResults(true)}
-        />
-        {searchQuery.length > 0 && (
-          <TouchableOpacity
-            onPress={() => {
-              setSearchQuery('');
-              setShowResults(false);
+    <TouchableWithoutFeedback onPress={() => { setShowResults(false); Keyboard.dismiss(); }}>
+      <View style={styles.container}>
+        <View style={styles.searchContainer}>
+          <Ionicons name="search" size={20} color="#FFFFFF" style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search stocks..."
+            placeholderTextColor="#888"
+            value={searchQuery}
+            onChangeText={(text) => {
+              setSearchQuery(text);
+              setShowResults(text.length > 0);
             }}
-            style={styles.clearButton}
-          >
-            <Ionicons name="close-circle" size={20} color="#888" />
-          </TouchableOpacity>
-        )}
-        {selectedStock && (
-          <TouchableOpacity onPress={() => toggleFavorite(selectedStock.id)}>
-            <Ionicons
-              name={isFavorite(selectedStock.id) ? 'star' : 'star-outline'}
-              size={24}
-              color={isFavorite(selectedStock.id) ? '#FFFFFF' : '#666'}
-              style={styles.favoriteIcon}
-            />
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {showResults && (
-        <View style={styles.resultsContainer}>
-          <FlatList
-            data={filteredStocks}
-            keyExtractor={(item) => item.id}
-            renderItem={renderStockItem}
-            style={styles.resultsList}
+            onFocus={() => setShowResults(true)}
           />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity
+              onPress={() => {
+                setSearchQuery('');
+                setShowResults(false);
+              }}
+              style={styles.clearButton}
+            >
+              <Ionicons name="close-circle" size={20} color="#888" />
+            </TouchableOpacity>
+          )}
+          {selectedStock && (
+            <TouchableOpacity onPress={() => toggleFavorite(selectedStock.id)}>
+              <Ionicons
+                name={isFavorite(selectedStock.id) ? 'star' : 'star-outline'}
+                size={24}
+                color={isFavorite(selectedStock.id) ? '#FFFFFF' : '#666'}
+                style={styles.favoriteIcon}
+              />
+            </TouchableOpacity>
+          )}
         </View>
-      )}
 
-      {selectedStock && !showResults && (
-        <View style={styles.stockDetails}>
-          <View style={styles.stockHeader}>
-            <View style={styles.stockHeaderLeft}>
-              <Image source={{ uri: selectedStock.icon }} style={styles.stockImageLarge} />
-              <View>
-                <Text>{selectedStock.name.replace("xStock", "")}</Text>
-                <Text style={styles.stockSymbolLarge}>{selectedStock.symbol}</Text>
+        {showResults && (
+          <View style={styles.resultsContainer}>
+            <FlatList
+              data={filteredStocks}
+              keyExtractor={(item) => item.id}
+              renderItem={renderStockItem}
+              style={styles.resultsList}
+              keyboardShouldPersistTaps="handled"
+            />
+          </View>
+        )}
+
+        {selectedStock && !showResults && (
+          <View style={styles.stockDetails}>
+            <View style={styles.stockHeader}>
+              <View style={styles.stockHeaderLeft}>
+                <Image source={{ uri: selectedStock.icon }} style={styles.stockImageLarge} />
+                <View>
+                  <Text>{selectedStock.name.replace("xStock", "")}</Text>
+                  <Text style={styles.stockSymbolLarge}>{selectedStock.symbol}</Text>
+                </View>
+              </View>
+              <View style={styles.stockHeaderRight}>
+                <Text style={styles.stockPriceLarge}>$ {selectedStock.stockData.price.toFixed(2)} <Text style={{ fontSize: 16 }}>USD</Text></Text>
+                <Text style={styles.stockChange24h}>+ {0.44.toFixed(2)}%</Text>
               </View>
             </View>
-            <View style={styles.stockHeaderRight}>
-              <Text style={styles.stockPriceLarge}>$ {selectedStock.stockData.price.toFixed(2)} <Text style={{ fontSize: 16 }}>USD</Text></Text>
-              <Text style={styles.stockChange24h}>+ {0.44.toFixed(2)}%</Text>
+          </View>
+        )}
+
+        <View style={styles.tabContainer}>
+          {['summary', 'news', 'profile'].map((tab) => (
+            <TouchableOpacity
+              key={tab}
+              style={[
+                styles.tabButton,
+                selectedTab === tab && styles.activeTabButton,
+              ]}
+              onPress={() => handleTabPress(tab)}
+            >
+              <Animated.Text
+                style={[
+                  styles.tabButtonText,
+                  selectedTab === tab && styles.activeTabButtonText,
+                ]}
+              >
+                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </Animated.Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <ScrollView style={styles.tabContentScrollView}>
+          <TabSection selectedTab={selectedTab} />
+        </ScrollView>
+
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.buyButton]}
+            onPress={() => handleActionPress('buy')}
+          >
+            <Text style={styles.buyButtonText}>Buy</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.sellButton]}
+            onPress={() => handleActionPress('sell')}
+          >
+            <Text style={styles.actionButtonText}>Sell</Text>
+          </TouchableOpacity>
+        </View>
+
+        <Modal isVisible={actionModalVisible} onBackdropPress={closeActionModal}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>
+              {selectedStock?.symbol}
+            </Text>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Enter amount"
+              placeholderTextColor="#888"
+              keyboardType="numeric"
+              value={amount}
+              onChangeText={setAmount}
+              autoFocus
+            />
+            <View style={styles.modalButtonContainer}>
+              <TouchableOpacity style={[styles.actionButton, styles.sellButton]} onPress={closeActionModal}>
+                <Text style={styles.actionButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.buyButton]}
+                onPress={handleAction}
+                disabled={!amount}
+              >
+                <Text style={styles.buyButtonText}>{actionType === 'buy' ? 'Buy' : 'Sell'}</Text>
+              </TouchableOpacity>
             </View>
           </View>
-        </View>
-      )}
-
-      <View style={styles.tabContainer}>
-        {['summary', 'news', 'profile'].map((tab) => (
-          <TouchableOpacity
-            key={tab}
-            style={[
-              styles.tabButton,
-              selectedTab === tab && styles.activeTabButton,
-            ]}
-            onPress={() => handleTabPress(tab)}
-          >
-            <Animated.Text
-              style={[
-                styles.tabButtonText,
-                selectedTab === tab && styles.activeTabButtonText,
-              ]}
-            >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </Animated.Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <ScrollView style={styles.tabContentScrollView}>
-        <TabSection selectedTab={selectedTab} />
-      </ScrollView>
-
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.buyButton]}
-          onPress={() => handleActionPress('buy')}
-        >
-          <Text style={styles.buyButtonText}>Buy</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.sellButton]}
-          onPress={() => handleActionPress('sell')}
-        >
-          <Text style={styles.actionButtonText}>Sell</Text>
-        </TouchableOpacity>
-      </View>
-
-      <Modal isVisible={actionModalVisible} onBackdropPress={closeActionModal}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>
-            {selectedStock?.symbol}
-          </Text>
-          <TextInput
-            style={styles.modalInput}
-            placeholder="Enter amount"
-            placeholderTextColor="#888"
-            keyboardType="numeric"
-            value={amount}
-            onChangeText={setAmount}
-            autoFocus
-          />
-          <View style={styles.modalButtonContainer}>
-            <TouchableOpacity style={[styles.actionButton, styles.sellButton]} onPress={closeActionModal}>
-              <Text style={styles.actionButtonText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.actionButton, styles.buyButton]}
-              onPress={handleAction}
-              disabled={!amount}
-            >
-              <Text style={styles.buyButtonText}>{actionType === 'buy' ? 'Buy' : 'Sell'}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal >
-    </View >
+        </Modal >
+      </View >
+    </TouchableWithoutFeedback>
   );
 }
 
