@@ -1,6 +1,6 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { StocksResponse } from './models';
-import { GetOptionsOpenClose200Response, ListNews200ResponseResultsInner, restClient } from '@polygon.io/client-js';
+import { GetOptionsOpenClose200Response, GetStocksAggregates200ResponseAllOfResultsInner, GetStocksAggregatesTimespanEnum, ListNews200ResponseResultsInner, restClient } from '@polygon.io/client-js';
 import NodeCache from 'node-cache';
 import ky from 'ky';
 import { z } from 'zod';
@@ -13,6 +13,7 @@ const cache = new NodeCache({ stdTTL: 60 });
 const stocksKey = 'stocks';
 const newsKey = (ticker: string) => `news:${ticker}`;
 const summaryKey = (ticker: string) => `summary:${ticker}`;
+const barsKey = (ticker: string, barSize: number) => `bars:${ticker}:${barSize}`;
 
 const t = initTRPC.create();
 const publicProcedure = t.procedure;
@@ -89,6 +90,63 @@ export const appRouter = router({
         cache.set(summaryKey(input), response);
 
         return response;
+      }),
+    bars: publicProcedure.input(z.object({
+      ticker: z.string(),
+      barSize: z.number(),
+    }))
+      .query(async ({ input }) => {
+        const { ticker, barSize } = input;
+        const key = barsKey(ticker, barSize)
+
+        if (cache.has(key)) {
+          const bars = cache.get<Array<GetStocksAggregates200ResponseAllOfResultsInner>>(key)!;
+          return { bars };
+        }
+
+        // start of next day
+        const to = new Date();
+        to.setDate(to.getDate() + 1);
+
+        let from = new Date()
+        let span = GetStocksAggregatesTimespanEnum.Minute
+        let size = barSize;
+
+        if (barSize === 15) {
+          // subtract 24h from the current date
+          from.setDate(from.getDate() - 1);
+        } else if (barSize === 60) {
+          // subtract 7 days from the current date
+          from.setDate(from.getDate() - 7);
+
+          // use hour timespan
+          span = GetStocksAggregatesTimespanEnum.Hour;
+          size = 1;
+        } else if (barSize === 1440) {
+          // subtract 30 days from the current date
+          from.setDate(from.getDate() - 30);
+
+          // use day timespan
+          span = GetStocksAggregatesTimespanEnum.Day;
+          size = 1;
+        }
+
+        // Adjust for weekends
+        const dayOfWeek = from.getDay();
+        if (dayOfWeek === 0) {
+          from.setDate(from.getDate() - 2); // Subtract 2 days if Sunday
+        } else if (dayOfWeek === 6) {
+          from.setDate(from.getDate() - 1); // Subtract 1 day if Saturday
+        }
+
+
+        const response = await polySDK.getStocksAggregates(ticker, size, span, dateToString(from), dateToString(to), true);
+
+        if (response.results) {
+          cache.set(key, response.results ?? []);
+        }
+
+        return { bars: response.results ?? [] };
       })
   },
 });
@@ -102,11 +160,14 @@ function trimTicker(ticker: string): string {
 }
 
 const getCurrentDate = () => {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-based
-  const day = String(today.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  return dateToString(new Date());
 };
+
+const dateToString = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 export type AppRouter = typeof appRouter;
