@@ -1,6 +1,6 @@
 import { BaseAsset } from '@/api/src/models';
 import { StyleSheet, TextInput, TouchableOpacity, FlatList, Image, ScrollView, Animated, TouchableWithoutFeedback, Keyboard } from 'react-native';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Modal from 'react-native-modal';
 import { Notifier } from 'react-native-notifier';
 import { Text, View } from '@/components/Themed';
@@ -11,11 +11,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
+import { CandlestickChart, LineChart } from 'react-native-wagmi-charts';
 
 export default function SwapScreen() {
   const { stockId } = useLocalSearchParams<{ stockId: string }>();
   const client = useApiClient();
-  const { data, isLoading, error } = useQuery({ queryKey: ['stocks'], queryFn: () => client.stocks.tradable.query() });
+
+  const { data, error } = useQuery({ queryKey: ['stocks'], queryFn: () => client.stocks.tradable.query() });
   const stocks: BaseAsset[] = data?.pools.map(p => p.baseAsset) ?? [];
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -27,6 +29,41 @@ export default function SwapScreen() {
   const [selectedTab, setSelectedTab] = useState('summary');
   const [tabAnimation] = useState(new Animated.Value(0));
   const [favorites, setFavorites] = useState<string[]>([]);
+
+  const [chartType, setChartType] = useState<'line' | 'candles'>('line');
+  const ticker = selectedStock?.symbol.slice(0, -1) ?? ''; // TODO remove the slice when backend supports it
+  const barData = useQuery({ queryKey: ['stocks-bars', ticker], queryFn: () => client.stocks.bars.query({ ticker, barSize: 15 }), enabled: !!selectedStock });
+
+  const tickerData = useQuery({ queryKey: ['stocks-news', ticker], queryFn: () => client.stocks.news.query(ticker), enabled: !!selectedStock });
+  const news = tickerData.data?.news ?? [];
+
+  // transform bars
+  const [lineData, candles] = useMemo(() => {
+    if (barData.failureReason) {
+      console.error('Error fetching stocks:', barData.failureReason);
+      Notifier.showNotification(getErrorAlert(barData.failureReason, 'Error loading price data'));
+    }
+
+    const data = barData.data?.bars;
+    if (!data || data.length === 0) {
+      console.warn('No bar data available for the selected stock.');
+      return [[], []];
+    }
+
+    const line = data.map(bar => ({
+      timestamp: bar.t,
+      value: bar.c,
+    }));
+
+    const bar = data.map(bar => ({
+      timestamp: bar.t,
+      open: bar.o,
+      high: bar.h,
+      low: bar.l,
+      close: bar.c,
+    }));
+    return [line, bar];
+  }, [barData.failureReason, barData.data])
 
   useEffect(() => {
     const loadFavorites = async () => {
@@ -133,19 +170,64 @@ export default function SwapScreen() {
 
   const TabSection = ({ selectedTab }: { selectedTab: string }) => {
     if (selectedTab === 'summary') {
+      if (lineData.length === 0 && candles.length === 0) {
+        return null
+      }
+
       return (
         <View style={styles.tabContentContainer}>
-          <Text style={styles.tabContent}>Previous Close: $123.45</Text>
-          <Text style={styles.tabContent}>Market Cap: $1.23B</Text>
-          <Text style={styles.tabContent}>Volume: 1.2M</Text>
+          <View style={styles.chartTypeToggle}>
+            <TouchableOpacity
+              style={[styles.chartTypeButton, chartType === 'line' && styles.chartTypeButtonActive]}
+              onPress={() => setChartType('line')}
+            >
+              <Text style={[styles.chartTypeText, chartType === 'line' && styles.chartTypeTextActive]}>Line</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.chartTypeButton, chartType === 'candles' && styles.chartTypeButtonActive]}
+              onPress={() => setChartType('candles')}
+            >
+              <Text style={[styles.chartTypeText, chartType === 'candles' && styles.chartTypeTextActive]}>Candles</Text>
+            </TouchableOpacity>
+          </View>
+          {chartType === 'line' ? (
+            <LineChart.Provider data={lineData}>
+              <LineChart>
+                <LineChart.Path color={'#9D00FF'}>
+                  <LineChart.Gradient />
+                </LineChart.Path>
+                <LineChart.CursorCrosshair color="white">
+                  <LineChart.Tooltip
+                    textStyle={{
+                      color: 'white',
+                      fontSize: 14,
+                    }}
+                  />
+                </LineChart.CursorCrosshair>
+              </LineChart>
+            </LineChart.Provider>
+          ) : (
+            <CandlestickChart.Provider data={candles}>
+              <CandlestickChart>
+                <CandlestickChart.Candles />
+              </CandlestickChart>
+            </CandlestickChart.Provider>
+          )}
         </View>
       );
     } else if (selectedTab === 'news') {
       return (
         <View style={styles.tabContentContainer}>
-          <View style={styles.newsTile}><Text style={styles.newsText}>News Story 1</Text></View>
-          <View style={styles.newsTile}><Text style={styles.newsText}>News Story 2</Text></View>
-          <View style={styles.newsTile}><Text style={styles.newsText}>News Story 3</Text></View>
+          {news.length === 0 ? (
+            <Text style={styles.tabContent}>No news available.</Text>
+          ) : (
+            news.map((item) => (
+              <View key={item.id} style={styles.newsTile}>
+                <Text style={[styles.newsText, { fontWeight: 'bold' }]}>{item.title}</Text>
+                <Text style={styles.newsText}>{item.description}</Text>
+              </View>
+            ))
+          )}
         </View>
       );
     } else if (selectedTab === 'profile') {
@@ -156,7 +238,7 @@ export default function SwapScreen() {
             {selectedStock?.industry && <Text style={styles.pill}>{selectedStock?.industry}</Text>}
           </View>
           <Text style={[styles.tabContent, styles.profileDescription]}>
-            {selectedStock?.description}
+            {selectedStock?.description || 'No profile information available.'}
           </Text>
         </View>
       );
@@ -556,5 +638,31 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     marginRight: 10,
+  },
+  chartTypeToggle: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginBottom: 10,
+    zIndex: 1,
+  },
+  chartTypeButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    marginLeft: 8,
+    borderWidth: 1,
+    borderColor: '#666',
+  },
+  chartTypeButtonActive: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#FFFFFF',
+  },
+  chartTypeText: {
+    fontSize: 12,
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
+  chartTypeTextActive: {
+    color: '#000000',
   },
 });

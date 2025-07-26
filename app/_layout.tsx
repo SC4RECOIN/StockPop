@@ -52,7 +52,14 @@ export default function RootLayout() {
   return <RootLayoutNav />;
 }
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchInterval: 1000 * 60,
+      retry: 0,
+    },
+  },
+});
 
 
 function RootLayoutNav() {

@@ -96,7 +96,8 @@ export const appRouter = router({
       barSize: z.number(),
     }))
       .query(async ({ input }) => {
-        const { ticker, barSize } = input;
+        const ticker = trimTicker(input.ticker);
+        const barSize = input.barSize;
         const key = barsKey(ticker, barSize)
 
         if (cache.has(key)) {
@@ -156,7 +157,7 @@ function trimTicker(ticker: string): string {
   if (ticker.endsWith('x')) {
     return ticker.slice(0, -1);
   }
-  return ticker;
+  return ticker.toUpperCase();
 }
 
 const getCurrentDate = () => {
