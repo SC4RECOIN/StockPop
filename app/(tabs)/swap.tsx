@@ -31,7 +31,7 @@ export default function SwapScreen() {
   const [favorites, setFavorites] = useState<string[]>([]);
 
   const [chartType, setChartType] = useState<'line' | 'candles'>('line');
-  const ticker = selectedStock?.symbol.slice(0, -1) ?? ''; // TODO remove the slice when backend supports it
+  const ticker = selectedStock?.symbol ?? '';
   const barData = useQuery({ queryKey: ['stocks-bars', ticker], queryFn: () => client.stocks.bars.query({ ticker, barSize: 15 }), enabled: !!selectedStock });
 
   const tickerData = useQuery({ queryKey: ['stocks-news', ticker], queryFn: () => client.stocks.news.query(ticker), enabled: !!selectedStock });
