@@ -1,5 +1,5 @@
 import { BaseAsset } from '@/api/src/models';
-import { StyleSheet, TextInput, TouchableOpacity, FlatList, Image, ScrollView, Animated, TouchableWithoutFeedback, Keyboard, ActivityIndicator } from 'react-native';
+import { StyleSheet, TextInput, TouchableOpacity, FlatList, Image, ScrollView, Animated, TouchableWithoutFeedback, Keyboard, ActivityIndicator, Dimensions } from 'react-native';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Modal from 'react-native-modal';
 import { Notifier } from 'react-native-notifier';
@@ -33,6 +33,7 @@ export default function SwapScreen() {
   const [chartType, setChartType] = useState<'line' | 'candles'>('line');
   const ticker = selectedStock?.symbol ?? '';
   const barData = useQuery({ queryKey: ['stocks-bars', ticker], queryFn: () => client.stocks.bars.query({ ticker, barSize: 15 }), enabled: !!selectedStock });
+  const { width: screenWidth } = Dimensions.get('window');
 
   const tickerData = useQuery({ queryKey: ['stocks-news', ticker], queryFn: () => client.stocks.news.query(ticker), enabled: !!selectedStock });
   const news = tickerData.data?.news ?? [];
@@ -200,7 +201,7 @@ export default function SwapScreen() {
           </View>
           {chartType === 'line' ? (
             <LineChart.Provider data={lineData}>
-              <LineChart>
+              <LineChart width={screenWidth - 20} height={250}>
                 <LineChart.Path color={'#9D00FF'}>
                   <LineChart.Gradient />
                 </LineChart.Path>
@@ -216,9 +217,13 @@ export default function SwapScreen() {
             </LineChart.Provider>
           ) : (
             <CandlestickChart.Provider data={candles}>
-              <CandlestickChart>
+              <CandlestickChart width={screenWidth - 20} height={250}>
                 <CandlestickChart.Candles />
+                <CandlestickChart.Crosshair>
+                  <CandlestickChart.Tooltip style={{ backgroundColor: 'black' }} textStyle={{ color: 'white', fontSize: 12 }} />
+                </CandlestickChart.Crosshair>
               </CandlestickChart>
+              <CandlestickChart.DatetimeText style={{ color: 'white', fontSize: 12 }} />
             </CandlestickChart.Provider>
           )}
           {selectedStock && <View>
@@ -236,8 +241,19 @@ export default function SwapScreen() {
           ) : (
             news.map((item) => (
               <View key={item.id} style={styles.newsTile}>
-                <Text style={[styles.newsText, { fontWeight: 'bold' }]}>{item.title}</Text>
-                <Text style={styles.newsText}>{item.description}</Text>
+                <View style={styles.newsContent}>
+                  <View style={styles.newsTitleRow}>
+                    {item.image_url && (
+                      <Image
+                        source={{ uri: item.image_url }}
+                        style={styles.newsImage}
+                        resizeMode="cover"
+                      />
+                    )}
+                    <Text style={[styles.newsText, styles.newsTitle]}>{item.title}</Text>
+                  </View>
+                  <Text style={[styles.newsText, styles.newsDescription]}>{item.description}</Text>
+                </View>
               </View>
             ))
           )}
@@ -271,8 +287,8 @@ export default function SwapScreen() {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={() => { setShowResults(false); Keyboard.dismiss(); }}>
-      <View style={styles.container}>
+    <View style={styles.container}>
+      <TouchableWithoutFeedback onPress={() => { setShowResults(false); Keyboard.dismiss(); }}>
         <View style={styles.searchContainer}>
           <Ionicons name="search" size={20} color="#FFFFFF" style={styles.searchIcon} />
           <TextInput
@@ -308,108 +324,113 @@ export default function SwapScreen() {
             </TouchableOpacity>
           )}
         </View>
+      </TouchableWithoutFeedback>
 
-        {showResults && (
+      {showResults && (
+        <>
+          <TouchableWithoutFeedback onPress={() => { setShowResults(false); Keyboard.dismiss(); }}>
+            <View style={styles.searchBackdrop} />
+          </TouchableWithoutFeedback>
           <View style={styles.resultsContainer}>
             <FlatList
               data={filteredStocks}
               keyExtractor={(item) => item.id}
               renderItem={renderStockItem}
               style={styles.resultsList}
-              keyboardShouldPersistTaps="handled"
+              keyboardShouldPersistTaps="always"
             />
           </View>
-        )}
+        </>
+      )}
 
-        {selectedStock && !showResults && (
-          <View style={styles.stockDetails}>
-            <View style={styles.stockHeader}>
-              <View style={styles.stockHeaderLeft}>
-                <Image source={{ uri: selectedStock.icon }} style={styles.stockImageLarge} />
-                <View>
-                  <Text>{selectedStock.name.replace("xStock", "")}</Text>
-                  <Text style={styles.stockSymbolLarge}>{selectedStock.symbol}</Text>
-                </View>
-              </View>
-              <View style={styles.stockHeaderRight}>
-                <Text style={styles.stockPriceLarge}>$ {selectedStock.stockData.price.toFixed(2)} <Text style={{ fontSize: 16 }}>USD</Text></Text>
-                <Text style={styles.stockChange24h}>+ {0.44.toFixed(2)}%</Text>
+      {selectedStock && !showResults && (
+        <View style={styles.stockDetails}>
+          <View style={styles.stockHeader}>
+            <View style={styles.stockHeaderLeft}>
+              <Image source={{ uri: selectedStock.icon }} style={styles.stockImageLarge} />
+              <View>
+                <Text>{selectedStock.name.replace("xStock", "")}</Text>
+                <Text style={styles.stockSymbolLarge}>{selectedStock.symbol}</Text>
               </View>
             </View>
+            <View style={styles.stockHeaderRight}>
+              <Text style={styles.stockPriceLarge}>$ {selectedStock.stockData.price.toFixed(2)} <Text style={{ fontSize: 16 }}>USD</Text></Text>
+              <Text style={styles.stockChange24h}>+ {0.44.toFixed(2)}%</Text>
+            </View>
           </View>
-        )}
+        </View>
+      )}
 
-        <View style={styles.tabContainer}>
-          {['summary', 'news', 'profile'].map((tab) => (
-            <TouchableOpacity
-              key={tab}
+      <View style={styles.tabContainer}>
+        {['summary', 'news', 'profile'].map((tab) => (
+          <TouchableOpacity
+            key={tab}
+            style={[
+              styles.tabButton,
+              selectedTab === tab && styles.activeTabButton,
+            ]}
+            onPress={() => handleTabPress(tab)}
+          >
+            <Animated.Text
               style={[
-                styles.tabButton,
-                selectedTab === tab && styles.activeTabButton,
+                styles.tabButtonText,
+                selectedTab === tab && styles.activeTabButtonText,
               ]}
-              onPress={() => handleTabPress(tab)}
             >
-              <Animated.Text
-                style={[
-                  styles.tabButtonText,
-                  selectedTab === tab && styles.activeTabButtonText,
-                ]}
-              >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </Animated.Text>
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </Animated.Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <ScrollView style={styles.tabContentScrollView}>
+        <TabSection selectedTab={selectedTab} />
+      </ScrollView>
+
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity
+          style={[styles.actionButton, styles.buyButton]}
+          onPress={() => handleActionPress('buy')}
+        >
+          <Text style={styles.buyButtonText}>Buy</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.actionButton, styles.sellButton]}
+          onPress={() => handleActionPress('sell')}
+        >
+          <Text style={styles.actionButtonText}>Sell</Text>
+        </TouchableOpacity>
+      </View>
+
+      <Modal isVisible={actionModalVisible} onBackdropPress={closeActionModal}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>
+            {selectedStock?.symbol}
+          </Text>
+          <TextInput
+            style={styles.modalInput}
+            placeholder="Enter amount"
+            placeholderTextColor="#888"
+            keyboardType="numeric"
+            value={amount}
+            onChangeText={setAmount}
+            autoFocus
+          />
+          <View style={styles.modalButtonContainer}>
+            <TouchableOpacity style={[styles.actionButton, styles.sellButton]} onPress={closeActionModal}>
+              <Text style={styles.actionButtonText}>Cancel</Text>
             </TouchableOpacity>
-          ))}
-        </View>
-
-        <ScrollView style={styles.tabContentScrollView}>
-          <TabSection selectedTab={selectedTab} />
-        </ScrollView>
-
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.buyButton]}
-            onPress={() => handleActionPress('buy')}
-          >
-            <Text style={styles.buyButtonText}>Buy</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.actionButton, styles.sellButton]}
-            onPress={() => handleActionPress('sell')}
-          >
-            <Text style={styles.actionButtonText}>Sell</Text>
-          </TouchableOpacity>
-        </View>
-
-        <Modal isVisible={actionModalVisible} onBackdropPress={closeActionModal}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>
-              {selectedStock?.symbol}
-            </Text>
-            <TextInput
-              style={styles.modalInput}
-              placeholder="Enter amount"
-              placeholderTextColor="#888"
-              keyboardType="numeric"
-              value={amount}
-              onChangeText={setAmount}
-              autoFocus
-            />
-            <View style={styles.modalButtonContainer}>
-              <TouchableOpacity style={[styles.actionButton, styles.sellButton]} onPress={closeActionModal}>
-                <Text style={styles.actionButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.actionButton, styles.buyButton]}
-                onPress={handleAction}
-                disabled={!amount}
-              >
-                <Text style={styles.buyButtonText}>{actionType === 'buy' ? 'Buy' : 'Sell'}</Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.buyButton]}
+              onPress={handleAction}
+              disabled={!amount}
+            >
+              <Text style={styles.buyButtonText}>{actionType === 'buy' ? 'Buy' : 'Sell'}</Text>
+            </TouchableOpacity>
           </View>
-        </Modal >
-      </View >
-    </TouchableWithoutFeedback>
+        </View>
+      </Modal >
+    </View >
   );
 }
 
@@ -446,6 +467,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     maxHeight: 300,
     marginBottom: 15,
+    zIndex: 10,
+    position: 'relative',
+    elevation: 3,
   },
   resultsList: {
     maxHeight: 300,
@@ -625,9 +649,32 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 15,
   },
+  newsContent: {
+    flexDirection: 'column',
+  },
+  newsTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  newsImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 4,
+    marginRight: 10,
+  },
   newsText: {
     color: '#FFFFFF',
     fontSize: 16,
+  },
+  newsTitle: {
+    fontWeight: 'bold',
+    flex: 1,
+  },
+  newsDescription: {
+    marginTop: 4,
+    fontSize: 14,
+    color: '#CCC',
   },
   favoriteIcon: {
     marginLeft: 10,
@@ -683,5 +730,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     height: 150,
+  },
+  searchBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 5,
+    backgroundColor: 'rgba(0,0,0,0.1)',
   },
 });
