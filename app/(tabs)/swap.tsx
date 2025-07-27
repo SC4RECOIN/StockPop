@@ -1,5 +1,5 @@
 import { BaseAsset } from '@/api/src/models';
-import { StyleSheet, TextInput, TouchableOpacity, FlatList, Image, ScrollView, Animated, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import { StyleSheet, TextInput, TouchableOpacity, FlatList, Image, ScrollView, Animated, TouchableWithoutFeedback, Keyboard, ActivityIndicator } from 'react-native';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Modal from 'react-native-modal';
 import { Notifier } from 'react-native-notifier';
@@ -170,6 +170,14 @@ export default function SwapScreen() {
 
   const TabSection = ({ selectedTab }: { selectedTab: string }) => {
     if (selectedTab === 'summary') {
+      if (barData.isLoading) {
+        return (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#ffffff" />
+          </View>
+        )
+      }
+
       if (lineData.length === 0 && candles.length === 0) {
         return null
       }
@@ -664,5 +672,11 @@ const styles = StyleSheet.create({
   },
   chartTypeTextActive: {
     color: '#000000',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 150,
   },
 });
