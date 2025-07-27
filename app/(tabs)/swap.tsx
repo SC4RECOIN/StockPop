@@ -221,6 +221,11 @@ export default function SwapScreen() {
               </CandlestickChart>
             </CandlestickChart.Provider>
           )}
+          {selectedStock && <View>
+            <Text>
+              This stock is trading {((1 - selectedStock.stockData.price / selectedStock.usdPrice) * 100).toFixed(2)}% higher on chain than it is on the stock market.
+            </Text>
+          </View>}
         </View>
       );
     } else if (selectedTab === 'news') {
