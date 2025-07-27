@@ -6,14 +6,14 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useCallback, useEffect, useState } from 'react';
 import { getErrorAlert } from '@/components/utils';
 import { Notifier } from 'react-native-notifier';
-import { useAuthorization } from '@/components/AuthorizationProvider';
-import { transact } from '@solana-mobile/mobile-wallet-adapter-protocol';
+import { Web3MobileWallet, transact } from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useWallet } from '@/components/useWallet';
 
 export default function TabOneScreen() {
-  const { user } = usePrivy();
-  const { selectedAccount } = useAuthorization();
+  const { pubkey } = useWallet();
 
-  if (!user && !selectedAccount) {
+  if (!pubkey) {
     return <LoginScreen />;
   }
 
@@ -43,27 +43,21 @@ const styles = StyleSheet.create({
 
 function LoginScreen() {
   const oauth = useLoginWithOAuth();
-  const { authorizeSession } = useAuthorization();
-  const [authorizationInProgress, setAuthorizationInProgress] = useState(false);
-
-  const handleConnectPress = useCallback(async () => {
-    try {
-      if (authorizationInProgress) return;
-      setAuthorizationInProgress(true);
-      await transact(async wallet => {
-        await authorizeSession(wallet);
-      });
-    } finally {
-      setAuthorizationInProgress(false);
-    }
-  }, [authorizationInProgress, authorizeSession]);
+  const { connectWallet } = useWallet();
 
   useEffect(() => {
     if (oauth.state.status === 'error') {
-      console.error('Error fetching stocks:', oauth.state.error);
+      console.error('Auth error:', oauth.state.error);
       Notifier.showNotification(getErrorAlert(oauth.state.error!, 'Error logging in'));
     }
   }, [oauth.state]);
+
+  const handleConnectWallet = useCallback(async () => {
+    await connectWallet().catch(error => {
+      console.error('Error connecting wallet:', error);
+      Notifier.showNotification(getErrorAlert(error, 'Error connecting wallet'));
+    })
+  }, []);
 
   return (
     <View style={loginStyles.loginContainer}>
@@ -82,8 +76,7 @@ function LoginScreen() {
 
       <Pressable
         style={({ pressed }) => [loginStyles.loginButton, loginStyles.walletButton, { opacity: pressed ? 0.8 : 1 }]}
-        onPress={() => handleConnectPress()}
-        disabled={authorizationInProgress}
+        onPress={handleConnectWallet}
       >
         <Text style={loginStyles.buttonText}>Connect Wallet</Text>
       </Pressable>

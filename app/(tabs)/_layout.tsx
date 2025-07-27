@@ -53,13 +53,7 @@ export default function TabLayout() {
           headerRight: () => (
             <Link href="/modal" asChild>
               <Pressable>
-                {({ pressed }) => (
-                  <FontAwesome
-                    name="info-circle"
-                    size={25}
-                    style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
-                  />
-                )}
+                <Octicons name="info" color="white" size={20} style={{ marginRight: 15 }} />
               </Pressable>
             </Link>
           ),
