@@ -3,7 +3,6 @@ import { Connection, PublicKey } from '@solana/web3.js';
 
 const BASE_URL = 'https://lite-api.jup.ag/ultra/v1';
 
-// Define interfaces for Jupiter Ultra API responses
 export interface JupiterUltraOrderResponse {
   inputMint: string;
   outputMint: string;
@@ -83,25 +82,12 @@ export interface SwapCallback {
   isComponentMounted?: () => boolean;
 }
 
-/**
- * Jupiter Ultra Service
- * Provides comprehensive swap functionality using Jupiter's Ultra API
- * Features:
- * - Request for swap orders from both Jupiter DEX Routing Engine and Jupiter Z (RFQ)
- * - Execute swap orders seamlessly in a single API call
- * - Handle complexities of RPC connections, transaction landing, slippage protection
- * - Request for token balances of an account
- */
 export class JupiterUltraService {
-
-  /**
-   * Gets a swap order from Jupiter Ultra API via our server
-   */
   static async getSwapOrder(
     inputMint: string,
     outputMint: string,
     amount: string | number,
-    taker?: string
+    taker: string
   ): Promise<JupiterUltraOrderResponse> {
     try {
       console.log(`[JupiterUltraService] Input: ${inputMint} -> Output: ${outputMint}, Amount: ${amount}`);
@@ -111,7 +97,7 @@ export class JupiterUltraService {
         inputMint,
         outputMint,
         amount: amount.toString(),
-        ...(taker && { taker })
+        taker
       };
 
       const response = await fetch(ultraOrderUrl, {
@@ -152,9 +138,6 @@ export class JupiterUltraService {
     }
   }
 
-  /**
-   * Execute a swap order via Jupiter Ultra API through our server
-   */
   static async executeSwapOrder(
     signedTransaction: string,
     requestId: string
@@ -206,9 +189,6 @@ export class JupiterUltraService {
     }
   }
 
-  /**
-   * Get token balances for a wallet via Jupiter Ultra API
-   */
   static async getBalances(walletAddress: string): Promise<JupiterUltraBalancesResponse> {
     try {
       console.log('[JupiterUltraService] 💰 Getting wallet balances');
@@ -245,14 +225,11 @@ export class JupiterUltraService {
     }
   }
 
-  /**
-   * Gets a swap order using token info objects
-   */
   static async getSwapOrderFromTokenInfo(
     inputToken: BaseAsset,
     outputToken: BaseAsset,
     inputAmount: string,
-    taker?: string
+    taker: string
   ): Promise<JupiterUltraOrderResponse | null> {
     try {
       // Validate tokens
@@ -294,15 +271,10 @@ export class JupiterUltraService {
     walletPublicKey: PublicKey,
     sendBase64Transaction: (base64Tx: string, connection: any, options?: any) => Promise<string>,
     connection: Connection,
-    callbacks?: SwapCallback
   ): Promise<JupiterUltraSwapResponse> {
-    const { statusCallback } = callbacks || {};
 
     const updateStatus = (status: string) => {
       console.log(`[JupiterUltraService] Status: ${status}`);
-      if (statusCallback) {
-        statusCallback(status);
-      }
     };
 
     try {
@@ -335,11 +307,6 @@ export class JupiterUltraService {
       if (!signature) {
         throw new Error('Transaction was not signed or failed to send.');
       }
-
-      updateStatus('Executing swap on the server...');
-
-      // The swap is already executed by the wallet, but we can double-check with the server if needed
-      // For now, we'll assume the signature means success and show it to the user.
 
       updateStatus('Swap successful! Finalizing...');
 

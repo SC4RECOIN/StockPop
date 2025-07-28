@@ -1,5 +1,5 @@
 import { initTRPC, TRPCError } from '@trpc/server';
-import { StocksResponse } from './models';
+import { BalancesResponse, PoolWithBalance, RpcBalanceResponse, StocksResponse } from './models';
 import { GetOptionsOpenClose200Response, GetStocksAggregates200ResponseAllOfResultsInner, GetStocksAggregatesTimespanEnum, ListNews200ResponseResultsInner, restClient } from '@polygon.io/client-js';
 import NodeCache from 'node-cache';
 import ky from 'ky';
@@ -14,6 +14,7 @@ const stocksKey = 'stocks';
 const newsKey = (ticker: string) => `news:${ticker}`;
 const summaryKey = (ticker: string) => `summary:${ticker}`;
 const barsKey = (ticker: string, barSize: number) => `bars:${ticker}:${barSize}`;
+const balancesKey = (wallet: string) => `balances:${wallet}`;
 
 const t = initTRPC.create();
 const publicProcedure = t.procedure;
@@ -30,25 +31,8 @@ export const appRouter = router({
   stocks: {
     tradable: publicProcedure
       .query(async () => {
-        if (cache.has(stocksKey)) {
-          return cache.get<StocksResponse>(stocksKey)!;
-        }
-
         try {
-          const response = await fetch(STOCKS_URL).json<StocksResponse>();
-
-          // add additional properties to each asset
-          response.pools = response.pools.map(pool => {
-            pool.baseAsset.category = ETFs.includes(pool.baseAsset.symbol) ? 'etf' : 'stock';
-            pool.baseAsset.description = stockDescriptions[pool.baseAsset.symbol] ?? 'No description available';
-            pool.baseAsset.sector = stockSectors[pool.baseAsset.symbol]
-            pool.baseAsset.industry = stockIndustries[pool.baseAsset.symbol]
-            return pool
-          });
-
-          cache.set(stocksKey, response);
-
-          return response
+          return await getStocks();
         } catch (error: any) {
           console.error('Error fetching stock data:', error);
 
@@ -150,7 +134,94 @@ export const appRouter = router({
         return { bars: response.results ?? [] };
       })
   },
+  wallet: {
+    balances: publicProcedure.input(z.string())
+      .query(async ({ input }) => {
+        const key = balancesKey(input);
+        if (cache.has(key)) {
+          return cache.get<BalancesResponse>(key)!;
+        }
+
+        try {
+          const stocks = await getStocks();
+          const pools = stocks.pools as PoolWithBalance[];
+          const balances: { [key: string]: number } = {};
+
+
+          for (const program of ['TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA', 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb']) {
+            const result = await ky.post(process.env.SOLANA_RPC_URL!, {
+              body: JSON.stringify({
+                jsonrpc: '2.0',
+                id: '1',
+                method: 'getTokenAccountsByOwner',
+                params: [
+                  input,
+                  {
+                    "programId": program
+                  },
+                  {
+                    encoding: 'jsonParsed'
+                  }
+                ]
+              })
+            }).json<RpcBalanceResponse>();
+
+            for (const value of result.result.value) {
+              const token = value.account.data.parsed.info.mint;
+              const amount = parseFloat(value.account.data.parsed.info.tokenAmount.uiAmountString);
+
+              if (amount === 0) continue;
+
+              const pool = pools.find(pool => pool.baseAsset.symbol === token);
+              if (pool) {
+                pool.balance = amount;
+              } else {
+                balances[token] = amount
+              }
+            }
+          }
+
+          const resp = {
+            pools,
+            other: balances
+          }
+
+          cache.set(key, resp, 10); // cache for 10 seconds
+
+          return resp;
+        } catch (error: any) {
+          console.error('Error fetching balances::', error);
+
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Failed to get balances',
+            cause: error,
+          });
+        }
+      }),
+  },
 });
+
+async function getStocks(): Promise<StocksResponse> {
+  if (cache.has(stocksKey)) {
+    return cache.get<StocksResponse>(stocksKey)!;
+  }
+
+  const response = await fetch(STOCKS_URL).json<StocksResponse>();
+
+  // add additional properties to each asset
+  response.pools = response.pools.map(pool => {
+    pool.baseAsset.category = ETFs.includes(pool.baseAsset.symbol) ? 'etf' : 'stock';
+    pool.baseAsset.description = stockDescriptions[pool.baseAsset.symbol] ?? 'No description available';
+    pool.baseAsset.sector = stockSectors[pool.baseAsset.symbol]
+    pool.baseAsset.industry = stockIndustries[pool.baseAsset.symbol]
+    return pool
+  });
+
+  cache.set(stocksKey, response);
+
+  return response
+}
 
 function trimTicker(ticker: string): string {
   // get rid of the 'x' at the end of the symbol if it exists (xStocks)

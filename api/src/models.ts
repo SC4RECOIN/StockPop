@@ -15,6 +15,15 @@ export interface Pool {
     baseAsset: BaseAsset
 }
 
+export interface BalancesResponse {
+    pools: PoolWithBalance[],
+    other: { [key: string]: number }
+}
+
+export interface PoolWithBalance extends Pool {
+    balance?: number
+}
+
 export interface BaseAsset {
     id: string
     name: string
@@ -85,4 +94,59 @@ export interface Stats {
     numTraders?: number
     numOrganicBuyers?: number
     numNetBuyers?: number
+}
+
+export interface RpcBalanceResponse {
+    jsonrpc: string
+    id: string
+    result: Result
+}
+
+export interface Result {
+    context: Context
+    value: Value[]
+}
+
+export interface Context {
+    apiVersion: string
+    slot: number
+}
+
+export interface Value {
+    pubkey: string
+    account: Account
+}
+
+export interface Account {
+    lamports: number
+    owner: string
+    data: Data
+    executable: boolean
+    rentEpoch: number
+    space: number
+}
+
+export interface Data {
+    program: string
+    parsed: Parsed
+    space: number
+}
+
+export interface Parsed {
+    info: Info
+}
+
+export interface Info {
+    isNative: boolean
+    mint: string
+    owner: string
+    state: string
+    tokenAmount: TokenAmount
+}
+
+export interface TokenAmount {
+    amount: string
+    decimals: number
+    uiAmount: number
+    uiAmountString: string
 }
