@@ -25,7 +25,8 @@ const polySDK = restClient(process.env.POLYGON_API_KEY!);
 const ETFs = ['SPYx', 'QQQx', 'GLDx']
 
 // Avoid 403 on Jupiter
-const fetch = ky.create({ headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36' } });
+const jupFetch = ky.create({ headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36' } });
+const heliusFetch = ky.create({ headers: { 'Content-Type': 'application/json' }, timeout: 10_000 });
 
 export const appRouter = router({
   stocks: {
@@ -150,10 +151,9 @@ export const appRouter = router({
           const programs = ['TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA', 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'];
 
           const results = await Promise.all(programs.map(async (program) => {
-            console.log("getting", program);
-            const result = await ky.post(process.env.SOLANA_RPC_URL!, {
-              timeout: 10_000, // 10 seconds
-              body: JSON.stringify({
+            return await heliusFetch.post(process.env.SOLANA_RPC_URL!, {
+              timeout: 10_000,
+              json: {
                 jsonrpc: '2.0',
                 id: '1',
                 method: 'getTokenAccountsByOwner',
@@ -162,11 +162,8 @@ export const appRouter = router({
                   { "programId": program },
                   { encoding: 'jsonParsed' }
                 ]
-              })
+              }
             }).json<RpcBalanceResponse>();
-
-            console.log("got", program);
-            return result
           }));
 
           for (const result of results) {
@@ -211,7 +208,7 @@ async function getStocks(): Promise<StocksResponse> {
     return cache.get<StocksResponse>(stocksKey)!;
   }
 
-  const response = await fetch(STOCKS_URL).json<StocksResponse>();
+  const response = await jupFetch(STOCKS_URL).json<StocksResponse>();
 
   // add additional properties to each asset
   response.pools = response.pools.map(pool => {
