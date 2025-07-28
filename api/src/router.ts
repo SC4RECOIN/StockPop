@@ -150,23 +150,23 @@ export const appRouter = router({
           const programs = ['TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA', 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'];
 
           const results = await Promise.all(programs.map(async (program) => {
-            console.log("getting", program, process.env.SOLANA_RPC_URL);
-            return ky.post(process.env.SOLANA_RPC_URL!, {
+            console.log("getting", program);
+            const result = await ky.post(process.env.SOLANA_RPC_URL!, {
+              timeout: 10_000, // 10 seconds
               body: JSON.stringify({
                 jsonrpc: '2.0',
                 id: '1',
                 method: 'getTokenAccountsByOwner',
                 params: [
                   input,
-                  {
-                    "programId": program
-                  },
-                  {
-                    encoding: 'jsonParsed'
-                  }
+                  { "programId": program },
+                  { encoding: 'jsonParsed' }
                 ]
               })
             }).json<RpcBalanceResponse>();
+
+            console.log("got", program);
+            return result
           }));
 
           for (const result of results) {
