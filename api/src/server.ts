@@ -1,5 +1,6 @@
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
 import express from 'express';
+import ky from 'ky';
 import { appRouter } from './router';
 
 async function main() {
@@ -17,6 +18,24 @@ async function main() {
       router: appRouter,
     }),
   );
+
+  // rpc proxy
+  app.post('/rpc', express.json(), async (req, res) => {
+    try {
+      const response = await ky.post(process.env.SOLANA_RPC_URL!, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(req.body),
+      });
+
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error('RPC proxy error:', error);
+      res.status(500).json({ error: 'Failed to proxy RPC request' });
+    }
+  })
 
   console.log('Listening on port 3000');
   app.listen(3000);

@@ -7,7 +7,7 @@ import { Text, View } from '@/components/Themed';
 import { useApiClient } from '@/components/useApiClient';
 import { useQuery } from '@tanstack/react-query';
 import { getErrorAlert } from '@/components/utils';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, Octicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
@@ -226,9 +226,10 @@ export default function SwapScreen() {
               <CandlestickChart.DatetimeText style={{ color: 'white', fontSize: 12 }} />
             </CandlestickChart.Provider>
           )}
-          {selectedStock && <View>
-            <Text>
-              This stock is trading {((1 - selectedStock.stockData.price / selectedStock.usdPrice) * 100).toFixed(2)}% higher on chain than it is on the stock market.
+          {selectedStock && <View style={[styles.discountAlert, { backgroundColor: selectedStock.stockData.price < selectedStock.usdPrice ? 'rgba(255, 0, 0, 0.2)' : 'rgba(0, 255, 0, 0.2)' }]}>
+            <Octicons name="info" color='white' size={20} style={{ marginRight: 10 }} />
+            <Text style={{ flex: 1, flexWrap: 'wrap', color: 'white' }}>
+              This stock is trading {Math.abs((1 - selectedStock.stockData.price / selectedStock.usdPrice) * 100).toFixed(2)}% {selectedStock.stockData.price > selectedStock.usdPrice ? 'lower' : 'higher'} on chain than it is on the stock market.
             </Text>
           </View>}
         </View>
@@ -740,4 +741,11 @@ const styles = StyleSheet.create({
     zIndex: 5,
     backgroundColor: 'rgba(0,0,0,0.1)',
   },
+  discountAlert: {
+    backgroundColor: '#2E2E2E',
+    padding: 10,
+    borderRadius: 5,
+    flexDirection: 'row',
+    marginTop: 10,
+  }
 });
