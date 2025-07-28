@@ -2,7 +2,6 @@ import { initTRPC, TRPCError } from '@trpc/server';
 import { BalancesResponse, PoolWithBalance, RpcBalanceResponse, StocksResponse } from './models';
 import { GetOptionsOpenClose200Response, GetStocksAggregates200ResponseAllOfResultsInner, GetStocksAggregatesTimespanEnum, ListNews200ResponseResultsInner, restClient } from '@polygon.io/client-js';
 import NodeCache from 'node-cache';
-import ky from 'ky';
 import { z } from 'zod';
 import { stockDescriptions, stockIndustries, stockSectors } from './descriptions';
 
@@ -23,10 +22,6 @@ const router = t.router;
 const polySDK = restClient(process.env.POLYGON_API_KEY!);
 
 const ETFs = ['SPYx', 'QQQx', 'GLDx']
-
-// Avoid 403 on Jupiter
-const jupFetch = ky.create({ headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36' } });
-const heliusFetch = ky.create({ headers: { 'Content-Type': 'application/json' }, timeout: 10_000 });
 
 export const appRouter = router({
   stocks: {
@@ -151,9 +146,12 @@ export const appRouter = router({
           const programs = ['TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA', 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'];
 
           const results = await Promise.all(programs.map(async (program) => {
-            return await heliusFetch.post(process.env.SOLANA_RPC_URL!, {
-              timeout: 10_000,
-              json: {
+            const response = await fetch(process.env.SOLANA_RPC_URL!, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
                 jsonrpc: '2.0',
                 id: '1',
                 method: 'getTokenAccountsByOwner',
@@ -162,8 +160,9 @@ export const appRouter = router({
                   { "programId": program },
                   { encoding: 'jsonParsed' }
                 ]
-              }
-            }).json<RpcBalanceResponse>();
+              }),
+            })
+            return await response.json() as RpcBalanceResponse;
           }));
 
           for (const result of results) {
@@ -207,11 +206,11 @@ async function getStocks(): Promise<StocksResponse> {
   if (cache.has(stocksKey)) {
     return cache.get<StocksResponse>(stocksKey)!;
   }
-
-  const response = await jupFetch(STOCKS_URL).json<StocksResponse>();
+  const response = await fetch(STOCKS_URL, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36' } });
+  const data = await response.json() as StocksResponse;
 
   // add additional properties to each asset
-  response.pools = response.pools.map(pool => {
+  data.pools = data.pools.map(pool => {
     pool.baseAsset.category = ETFs.includes(pool.baseAsset.symbol) ? 'etf' : 'stock';
     pool.baseAsset.description = stockDescriptions[pool.baseAsset.symbol] ?? 'No description available';
     pool.baseAsset.sector = stockSectors[pool.baseAsset.symbol]
@@ -219,9 +218,9 @@ async function getStocks(): Promise<StocksResponse> {
     return pool
   });
 
-  cache.set(stocksKey, response);
+  cache.set(stocksKey, data);
 
-  return response
+  return data
 }
 
 function trimTicker(ticker: string): string {

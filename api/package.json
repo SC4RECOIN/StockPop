@@ -18,7 +18,6 @@
     "@trpc/react-query": "npm:@trpc/react-query",
     "@trpc/server": "npm:@trpc/server",
     "express": "^5.0.0",
-    "ky": "^1.8.2",
     "node-cache": "^5.1.2",
     "zod": "^3.25.51"
   },
