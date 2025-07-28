@@ -137,24 +137,21 @@ export const appRouter = router({
   wallet: {
     balances: publicProcedure.input(z.string())
       .query(async ({ input }) => {
-        console.log("getting key")
         const key = balancesKey(input);
         if (cache.has(key)) {
           return cache.get<BalancesResponse>(key)!;
         }
 
         try {
-          console.log("getting stocks")
           const stocks = await getStocks();
-          console.log("got stocks")
           const pools = stocks.pools as PoolWithBalance[];
           const balances: { [key: string]: number } = {};
 
+          const programs = ['TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA', 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb'];
 
-
-          for (const program of ['TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA', 'TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb']) {
-            console.log("getting", program)
-            const result = await ky.post(process.env.SOLANA_RPC_URL!, {
+          const results = await Promise.all(programs.map(async (program) => {
+            console.log("getting", program, process.env.SOLANA_RPC_URL);
+            return ky.post(process.env.SOLANA_RPC_URL!, {
               body: JSON.stringify({
                 jsonrpc: '2.0',
                 id: '1',
@@ -170,9 +167,9 @@ export const appRouter = router({
                 ]
               })
             }).json<RpcBalanceResponse>();
+          }));
 
-            console.log("parsing", program)
-
+          for (const result of results) {
             for (const value of result.result.value) {
               const token = value.account.data.parsed.info.mint;
               const amount = parseFloat(value.account.data.parsed.info.tokenAmount.uiAmountString);
@@ -183,7 +180,7 @@ export const appRouter = router({
               if (pool) {
                 pool.balance = amount;
               } else {
-                balances[token] = amount
+                balances[token] = amount;
               }
             }
           }
@@ -192,8 +189,6 @@ export const appRouter = router({
             pools,
             other: balances
           }
-
-          console.log("caching balances", resp)
 
           cache.set(key, resp, 10); // cache for 10 seconds
 
@@ -213,11 +208,8 @@ export const appRouter = router({
 
 async function getStocks(): Promise<StocksResponse> {
   if (cache.has(stocksKey)) {
-    console.log("cache hit for stocks")
     return cache.get<StocksResponse>(stocksKey)!;
   }
-
-  console.log("cache miss for stocks")
 
   const response = await fetch(STOCKS_URL).json<StocksResponse>();
 
