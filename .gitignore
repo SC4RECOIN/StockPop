@@ -45,3 +45,4 @@ api/client/.openapi-generator-ignore
 api/server/go/README.md
 
 api/.env
+.env
