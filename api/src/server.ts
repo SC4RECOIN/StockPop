@@ -22,6 +22,21 @@ async function main() {
   // rpc proxy
   app.post('/rpc', express.json(), async (req, res) => {
     try {
+      console.log('RPC request A');
+
+      const resA = await fetch(process.env.SOLANA_RPC_URL!, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(req.body),
+      });
+      console.log(resA.status)
+      const resB = await resA.json()
+      console.log(resB)
+
+      console.log('RPC request B');
+
       const response = await ky.post(process.env.SOLANA_RPC_URL!, {
         headers: {
           'Content-Type': 'application/json',
