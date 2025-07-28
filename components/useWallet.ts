@@ -7,12 +7,16 @@ import {
 import { useEffect, useState } from "react";
 import { toUint8Array } from 'js-base64';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from "expo-router";
 
 const APP_IDENTITY = {
   name: 'StockPop',
 }
 
 export function useWallet() {
+  const router = useRouter();
+  const [connecting, setConnecting] = useState(false);
+
   // privy
   const { user, logout } = usePrivy();
   const solanaWallet = useEmbeddedSolanaWallet()
@@ -85,10 +89,19 @@ export function useWallet() {
       await AsyncStorage.removeItem('wallet-token');
       setPubkey(null);
     }
+
+    router.push({
+      pathname: '/(tabs)',
+    });
   }
 
   // connect device wallet
   const connectWallet = async () => {
+    if (connecting) {
+      return;
+    }
+    setConnecting(true);
+
     const authorizationResult = await transact(async (wallet: Web3MobileWallet) => {
       const authorizationResult = await wallet.authorize({
         cluster: "mainnet-beta",
@@ -98,9 +111,12 @@ export function useWallet() {
       return authorizationResult;
     });
 
-    console.log("Connected to: " + authorizationResult.accounts[0].address);
-    setPubkey(getPublicKeyFromAddress(authorizationResult.accounts[0].address));
+    const pubkey = getPublicKeyFromAddress(authorizationResult.accounts[0].address)
+    console.log("Connected to: " + pubkey);
+    setPubkey(pubkey);
     await AsyncStorage.setItem('wallet-token', authorizationResult.auth_token);
+
+    setConnecting(false);
   }
 
   // re-connect device wallet
@@ -117,7 +133,7 @@ export function useWallet() {
       }
 
       await transact(async (wallet: Web3MobileWallet) => {
-        const result = await wallet.reauthorize({
+        const result = await wallet.authorize({
           identity: APP_IDENTITY,
           auth_token: token,
         });
@@ -127,9 +143,14 @@ export function useWallet() {
         setPubkey(pubkey);
       });
     }
+    if (connecting) {
+      return;
+    }
+    setConnecting(true);
     reconnect().catch(error => {
       console.error('Error reconnecting wallet:', error);
     });
+    setConnecting(false);
   }, []);
 
 
