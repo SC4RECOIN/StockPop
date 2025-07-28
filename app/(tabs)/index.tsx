@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Image } from 'react-native';
+import { Pressable, StyleSheet, Image, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import { useLoginWithOAuth } from '@privy-io/expo';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -6,26 +6,100 @@ import { useCallback, useEffect } from 'react';
 import { getErrorAlert } from '@/components/utils';
 import { Notifier } from 'react-native-notifier';
 import { useWallet } from '@/components/WalletContext';
+import { ApiTypes, useApiClient } from '@/components/useApiClient';
+import { useQuery } from '@tanstack/react-query';
+import Decimal from 'decimal.js';
+import { useRouter } from 'expo-router';
+
+type Pool = ApiTypes['wallet']['balances']['pools'][number]
 
 export default function TabOneScreen() {
+  const router = useRouter();
   const { pubkey } = useWallet();
+  const client = useApiClient();
+  const { data, isLoading, error } = useQuery({ queryKey: ['balances', pubkey], queryFn: () => client.wallet.balances.query(pubkey!.toBase58()), enabled: !!pubkey });
+
+  useEffect(() => {
+    if (error) {
+      console.error('Error fetching balances:', error);
+      Notifier.showNotification(getErrorAlert(error, 'Error loading balances'));
+    }
+  }, [error]);
 
   if (!pubkey) {
     return <LoginScreen />;
   }
 
+  const renderPositionItem = ({ item }: { item: Pool }) => {
+    const asset = item.baseAsset;
+    const priceChange = new Decimal(asset.stats24h.priceChange ?? 0).div(asset.usdPrice).mul(100);
+
+    const handleStockPress = () => {
+      router.push({
+        pathname: '/(tabs)/swap',
+        params: { stockId: asset.id },
+      });
+    };
+
+    return (
+      <TouchableOpacity style={styles.stockItem} onPress={handleStockPress}>
+        <Image source={{ uri: asset.icon }} style={styles.stockImage} />
+
+        <View style={styles.stockInfo}>
+          <Text style={styles.ticker}>{asset.symbol}</Text>
+          <Text style={styles.name}>{asset.name}</Text>
+        </View>
+
+        <View style={styles.priceContainer}>
+          <Text style={styles.price}>${(asset.usdPrice * (item.balance ?? 0)).toFixed(2)}</Text>
+          <Text
+            style={[
+              styles.change,
+              { color: priceChange.isPositive() ? '#4CAF50' : '#F44336' },
+            ]}
+          >
+            {priceChange.toFixed(2)}%
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const pools = data?.pools.filter(pool => pool.balance ?? 0 > 0) || [];
+  const noPositions = pools.length === 0;
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Hello</Text>
+      <Text style={styles.title}>Positions</Text>
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#ffffff" />
+        </View>
+      ) : noPositions ? <Text style={styles.noPositionsText}>No Positions</Text> : (
+        <FlatList
+          data={data!.pools.filter(pool => pool.balance ?? 0 > 0)}
+          keyExtractor={(item) => item.id}
+          renderItem={renderPositionItem}
+          contentContainerStyle={styles.listContent}
+        />
+      )}
+      <Text style={styles.title}>Available to trade</Text>
+      <View style={[styles.tradeRow, { marginBottom: 30 }]}>
+        <Text style={styles.tradeLabel}>USD Cash</Text>
+        <Text style={styles.tradeAmount}>${(data?.other['EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'] ?? 0).toFixed(2)}</Text>
+      </View>
+      <Text style={[styles.title, { paddingTop: 30, borderTopWidth: 1, borderTopColor: '#1E1E1E' }]}>Updates</Text>
+      <Text style={styles.noPositionsText}>No updates</Text>
+      <Text style={styles.title}>Upcoming</Text>
+      <Text style={styles.feature}><Text style={{ fontWeight: 'bold' }}>Feeless trades.</Text> Make trades without needing SOL to pay for transactions 🙌</Text>
+      <Text style={styles.feature}><Text style={{ fontWeight: 'bold' }}>2x stocks and ETFs.</Text> Trade with leverage 💪</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    padding: 15,
   },
   title: {
     fontSize: 20,
@@ -36,6 +110,77 @@ const styles = StyleSheet.create({
     height: 1,
     width: '80%',
   },
+  stockItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  stockImage: {
+    borderRadius: 8,
+    marginRight: 15,
+    width: 40,
+    height: 40,
+  },
+  stockInfo: {
+    flex: 1,
+  },
+  ticker: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  name: {
+    fontSize: 14,
+    opacity: 0.7,
+  },
+  priceContainer: {
+    alignItems: 'flex-end',
+    marginRight: 30,
+  },
+  price: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  change: {
+    fontSize: 14,
+  },
+  listContent: {
+    paddingBottom: 20,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+  },
+  tradeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  tradeLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  tradeAmount: {
+    fontSize: 16,
+  },
+  noPositionsText: {
+    textAlign: 'center',
+    fontSize: 16,
+    color: '#888',
+    marginVertical: 30,
+  },
+  feature: {
+    fontSize: 16,
+    backgroundColor: '#1E1E1E',
+    marginVertical: 10,
+    padding: 10,
+    borderRadius: 8,
+  }
 });
 
 function LoginScreen() {
