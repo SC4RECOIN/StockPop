@@ -1,6 +1,6 @@
 import { StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Text, View } from '@/components/Themed';
-import { useWallet } from '@/components/useWallet';
+import { useWallet } from '@/components/WalletContext';
 
 export default function ModalScreen() {
   const { signOut, pubkey } = useWallet();

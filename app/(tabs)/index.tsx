@@ -1,14 +1,11 @@
 import { Pressable, StyleSheet, Image } from 'react-native';
 import { Text, View } from '@/components/Themed';
-import { usePrivy } from '@privy-io/expo';
 import { useLoginWithOAuth } from '@privy-io/expo';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 import { getErrorAlert } from '@/components/utils';
 import { Notifier } from 'react-native-notifier';
-import { Web3MobileWallet, transact } from '@solana-mobile/mobile-wallet-adapter-protocol-web3js';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useWallet } from '@/components/useWallet';
+import { useWallet } from '@/components/WalletContext';
 
 export default function TabOneScreen() {
   const { pubkey } = useWallet();

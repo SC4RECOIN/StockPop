@@ -4,8 +4,8 @@ import { Octicons } from '@react-native-vector-icons/octicons';
 import { Link, Tabs } from 'expo-router';
 import { Pressable } from 'react-native';
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
-import { useWallet } from '@/components/useWallet';
 import { PlatformPressable } from '@react-navigation/elements';
+import { useWallet } from '@/components/WalletContext';
 
 
 // https://icons.expo.fyi/
