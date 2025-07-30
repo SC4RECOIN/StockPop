@@ -17,7 +17,7 @@ export default function TabOneScreen() {
   const router = useRouter();
   const { pubkey } = useWallet();
   const client = useApiClient();
-  const { data, isLoading, error } = useQuery({ queryKey: ['balances', pubkey], queryFn: () => client.wallet.balances.query(pubkey!.toBase58()), enabled: !!pubkey });
+  const { data, isLoading, error } = useQuery({ queryKey: ['balances', pubkey], queryFn: () => client.wallet.balances.query(pubkey!.toBase58()), enabled: !!pubkey, refetchInterval: 10_000 });
 
   useEffect(() => {
     if (error) {

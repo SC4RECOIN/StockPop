@@ -3,7 +3,7 @@ import { Text, View } from '@/components/Themed';
 import { useWallet } from '@/components/WalletContext';
 
 export default function ModalScreen() {
-  const { signOut, pubkey } = useWallet();
+  const { signOut, pubkey, connected } = useWallet();
 
   const handleSignOut = async () => {
     console.log("Signing user out");
@@ -15,18 +15,18 @@ export default function ModalScreen() {
       <View style={styles.addressContainer}>
         <Text style={styles.addressLabel}>Wallet Address</Text>
         <Text style={styles.addressText} numberOfLines={1} ellipsizeMode="middle">
-          {pubkey && pubkey.toBase58()}
+          {pubkey && pubkey.toBase58()}{!connected && ' (Not connected)'}
         </Text>
       </View>
 
-      <View style={styles.footer}>
+      {connected && <View style={styles.footer}>
         <TouchableOpacity
           style={styles.signOutButton}
           onPress={handleSignOut}
         >
           <Text style={styles.signOutButtonText}>Sign Out</Text>
         </TouchableOpacity>
-      </View>
+      </View>}
     </View>
   );
 }

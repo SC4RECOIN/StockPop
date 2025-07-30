@@ -1,23 +1,23 @@
 import React from 'react';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Octicons } from '@react-native-vector-icons/octicons';
 import { Link, Tabs } from 'expo-router';
-import { Pressable } from 'react-native';
+import { ActivityIndicator, Pressable, View, Text, StyleSheet } from 'react-native';
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 import { PlatformPressable } from '@react-navigation/elements';
-import { useWallet } from '@/components/WalletContext';
+import { usePrivy } from '@privy-io/expo';
 
-
-// https://icons.expo.fyi/
-function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>['name'];
-  color: string;
-}) {
-  return <FontAwesome size={24} style={{ marginBottom: 0 }} {...props} />;
-}
 
 export default function TabLayout() {
-  const { connected } = useWallet();
+  const { isReady } = usePrivy();
+
+  if (!isReady) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#ffffff" />
+        <Text style={styles.loadingText}>Loading stocks...</Text>
+      </View>
+    )
+  }
 
   return (
     <Tabs
@@ -49,7 +49,7 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color }) => <Octicons name="home" color={color} size={20} />,
-          headerShown: useClientOnlyValue(false, connected),
+          headerShown: useClientOnlyValue(false, true),
           headerRight: () => (
             <Link href="/modal" asChild>
               <Pressable>
@@ -76,3 +76,15 @@ export default function TabLayout() {
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+  },
+});
