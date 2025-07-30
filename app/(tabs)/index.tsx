@@ -10,6 +10,8 @@ import { ApiTypes, useApiClient } from '@/components/useApiClient';
 import { useQuery } from '@tanstack/react-query';
 import Decimal from 'decimal.js';
 import { useRouter } from 'expo-router';
+import { useLogin } from '@privy-io/expo/ui';
+import Octicons from '@react-native-vector-icons/octicons';
 
 type Pool = ApiTypes['wallet']['balances']['pools'][number]
 
@@ -67,6 +69,7 @@ export default function TabOneScreen() {
 
   const pools = data?.pools.filter(pool => pool.balance ?? 0 > 0) || [];
   const noPositions = pools.length === 0;
+  const usdCash = data?.other['EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'] ?? 0;
 
   return (
     <View style={styles.container}>
@@ -86,8 +89,14 @@ export default function TabOneScreen() {
       <Text style={styles.title}>Available to trade</Text>
       <View style={[styles.tradeRow, { marginBottom: 30 }]}>
         <Text style={styles.tradeLabel}>USD Cash</Text>
-        <Text style={styles.tradeAmount}>${(data?.other['EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'] ?? 0).toFixed(2)}</Text>
+        <Text style={styles.tradeAmount}>${usdCash.toFixed(2)}</Text>
       </View>
+      {usdCash === 0 && (
+        <>
+          <Text style={styles.noCashText}>Transfer USDC to your wallet to start trading</Text>
+          <Text style={styles.copyPubkey}>{pubkey?.toBase58()}  <Octicons name="copy" color="white" size={12} /></Text>
+        </>
+      )}
       <Text style={[styles.title, { paddingTop: 30, borderTopWidth: 1, borderTopColor: '#1E1E1E' }]}>Updates</Text>
       <Text style={styles.noPositionsText}>No updates</Text>
       <Text style={styles.title}>Upcoming</Text>
@@ -174,6 +183,21 @@ const styles = StyleSheet.create({
     color: '#888',
     marginVertical: 30,
   },
+  noCashText: {
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginTop: 30,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  copyPubkey: {
+    textAlign: 'center',
+    fontSize: 12,
+    backgroundColor: '#5e42db3d',
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
   feature: {
     fontSize: 16,
     backgroundColor: '#1E1E1E',
@@ -184,15 +208,17 @@ const styles = StyleSheet.create({
 });
 
 function LoginScreen() {
-  const oauth = useLoginWithOAuth();
+  const { login } = useLogin();
   const { connectWallet } = useWallet();
 
-  useEffect(() => {
-    if (oauth.state.status === 'error') {
-      console.error('Auth error:', oauth.state.error);
-      Notifier.showNotification(getErrorAlert(oauth.state.error!, 'Error logging in'));
+  const handlePrivyLogin = useCallback(async () => {
+    try {
+      const result = await login({ loginMethods: ['email'] })
+      console.log('User logged in', result.user);
+    } catch (error) {
+      console.error('Error logging in:', error);
     }
-  }, [oauth.state]);
+  }, [login]);
 
   const handleConnectWallet = useCallback(async () => {
     await connectWallet().catch(error => {
@@ -209,11 +235,10 @@ function LoginScreen() {
 
       <Pressable
         style={({ pressed }) => [loginStyles.loginButton, { opacity: pressed ? 0.8 : 1 }]}
-        onPress={() => oauth.login({ provider: 'google' })}
-        disabled={oauth.state.status === 'loading'}
+        onPress={handlePrivyLogin}
       >
-        <FontAwesome name="google" size={20} color="#fff" style={loginStyles.buttonIcon} />
-        <Text style={loginStyles.buttonText}>Login with Google</Text>
+        <FontAwesome name="envelope" size={20} color="#fff" style={loginStyles.buttonIcon} />
+        <Text style={loginStyles.buttonText}>Login With Email</Text>
       </Pressable>
 
       <Pressable
