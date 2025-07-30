@@ -1,5 +1,6 @@
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
 import express from 'express';
+import { rateLimit } from 'express-rate-limit'
 import { appRouter } from './router';
 
 async function main() {
@@ -18,8 +19,14 @@ async function main() {
     }),
   );
 
+  const limiter = rateLimit({
+    windowMs: 2 * 1000, // 2s
+    limit: 4,
+    message: { error: 'Too many requests, please try again later.' },
+  })
+
   // rpc proxy
-  app.post('/rpc', express.json(), async (req, res) => {
+  app.post('/rpc', limiter, express.json(), async (req, res) => {
     try {
       const response = await fetch(process.env.SOLANA_RPC_URL!, {
         method: 'POST',

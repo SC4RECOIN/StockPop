@@ -4,12 +4,12 @@
     "slug": "stock-pop",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/pop.png",
+    "icon": "./assets/images/pop-far.png",
     "scheme": "stockpop",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/pop.png",
+      "image": "./assets/images/pop-far.png",
       "resizeMode": "contain",
       "backgroundColor": "#000000"
     },
@@ -18,7 +18,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/pop.png",
+        "foregroundImage": "./assets/images/pop-far.png",
         "backgroundColor": "#000000"
       },
       "edgeToEdgeEnabled": true,
