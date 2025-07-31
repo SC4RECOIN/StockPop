@@ -1,6 +1,6 @@
 import { BaseAsset } from '@/api/src/models';
 import { StyleSheet, TextInput, TouchableOpacity, FlatList, Image, ScrollView, Animated, TouchableWithoutFeedback, Keyboard, ActivityIndicator, Dimensions } from 'react-native';
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Modal from 'react-native-modal';
 import { Notifier } from 'react-native-notifier';
 import { Text, View } from '@/components/Themed';
@@ -12,23 +12,35 @@ import { useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import { CandlestickChart, LineChart } from 'react-native-wagmi-charts';
+import { JupiterUltraOrderResponse, JupiterUltraService } from '@/services/tradeService';
+import { useWallet } from '@/components/WalletContext';
+import { useDebounce } from 'use-debounce';
 
 export default function SwapScreen() {
   const { stockId } = useLocalSearchParams<{ stockId: string }>();
   const client = useApiClient();
-
+  const { pubkey } = useWallet();
   const { data, error } = useQuery({ queryKey: ['stocks'], queryFn: () => client.stocks.tradable.query() });
   const stocks: BaseAsset[] = data?.pools.map(p => p.baseAsset) ?? [];
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStock, setSelectedStock] = useState<BaseAsset | null>(null);
-  const [amount, setAmount] = useState('');
+
   const [showResults, setShowResults] = useState(false);
   const [actionModalVisible, setActionModalVisible] = useState(false);
   const [actionType, setActionType] = useState<'buy' | 'sell' | null>(null);
   const [selectedTab, setSelectedTab] = useState('summary');
   const [tabAnimation] = useState(new Animated.Value(0));
   const [favorites, setFavorites] = useState<string[]>([]);
+
+  // debounce amount
+  const [amount, setAmount] = useState('');
+  const [debouncedAmount] = useDebounce(amount, 1000);
+
+  // Swap quote states
+  const [isLoadingQuote, setIsLoadingQuote] = useState(false);
+  const [swapQuote, setSwapQuote] = useState<JupiterUltraOrderResponse | null>(null);
+  const [quoteError, setQuoteError] = useState<string | null>(null);
 
   const [chartType, setChartType] = useState<'line' | 'candles'>('line');
   const ticker = selectedStock?.symbol ?? '';
@@ -66,6 +78,7 @@ export default function SwapScreen() {
     return [line, bar];
   }, [barData.failureReason, barData.data])
 
+  // load favorites from AsyncStorage
   useEffect(() => {
     const loadFavorites = async () => {
       const storedFavorites = await AsyncStorage.getItem('favorites');
@@ -76,6 +89,7 @@ export default function SwapScreen() {
     loadFavorites();
   }, []);
 
+  // load favorites on focus
   useFocusEffect(
     useCallback(() => {
       const loadFavorites = async () => {
@@ -88,6 +102,7 @@ export default function SwapScreen() {
     }, [])
   );
 
+  // set selected stock based on URL parameter or first stock
   useEffect(() => {
     if (stocks.length > 0) {
       if (!selectedStock) {
@@ -113,6 +128,13 @@ export default function SwapScreen() {
     }
   }, [stocks, stockId, error, selectedStock]);
 
+  // Fetch quote when amount changes
+  useEffect(() => {
+    setQuoteError(null);
+    setSwapQuote(null);
+    fetchSwapQuote();
+  }, [debouncedAmount]);
+
   const filteredStocks = stocks.filter(stock => {
     const query = searchQuery.toLowerCase();
     return stock.name.toLowerCase().includes(query) ||
@@ -134,12 +156,76 @@ export default function SwapScreen() {
   const closeActionModal = () => {
     setActionModalVisible(false);
     setAmount('');
+    setSwapQuote(null);
+    setQuoteError(null);
+  };
+
+  const fetchSwapQuote = async () => {
+    if (!selectedStock || !pubkey || !debouncedAmount || parseFloat(debouncedAmount) <= 0) {
+      setSwapQuote(null);
+      return;
+    }
+
+    try {
+      setIsLoadingQuote(true);
+      setQuoteError(null);
+
+      const USDC = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+
+      // Convert input amount to the correct unit based on token decimals
+      const inputAmountBase = JupiterUltraService.toBaseUnits(debouncedAmount, selectedStock.decimals);
+
+      console.log(`Getting swap quote for ${debouncedAmount} ${selectedStock.symbol} (${inputAmountBase} base units)`);
+
+      const order = await JupiterUltraService.getSwapOrder(
+        USDC,
+        selectedStock.id,
+        inputAmountBase.toString(),
+        pubkey.toString()
+      );
+
+      console.log(`Received swap quote: ${order.inAmount} -> ${order.outAmount}`);
+      setSwapQuote(order);
+
+      if (order.errorMessage) {
+        setQuoteError(order.errorMessage);
+      }
+    } catch (error) {
+      console.error('Error fetching swap quote:', error);
+      setQuoteError(error instanceof Error ? error.message : 'Failed to get swap quote');
+    } finally {
+      setIsLoadingQuote(false);
+    }
+  };
+
+  // Format price impact percentage for display
+  const formatPriceImpact = (priceImpactPct: string | undefined) => {
+    if (!priceImpactPct) return '0.00%';
+    const impact = parseFloat(priceImpactPct);
+    return `${impact > 0 ? '+' : ''}${impact.toFixed(2)}%`;
   };
 
   const handleAction = () => {
-    // Here you would implement the actual buy/sell logic
-    console.log(`${actionType} ${amount} of ${selectedStock?.symbol}`);
+    if (!swapQuote || !selectedStock || !pubkey) {
+      console.error('Cannot execute swap: missing required data');
+      return;
+    }
+
+    console.log(`Executing swap: ${amount} ${selectedStock.symbol} -> USD`);
+    console.log(`Quote details: Input: ${swapQuote.inAmount}, Output: ${swapQuote.outAmount}`);
+
+    // Here you would implement the actual swap execution using JupiterUltraService.executeUltraSwap
+    // For now, we'll just log the details and close the modal
+
     closeActionModal();
+
+    // Show a success notification
+    Notifier.showNotification({
+      title: 'Swap Initiated',
+      description: `Swapping ${amount} ${selectedStock.symbol} to USD`,
+      duration: 3000,
+      showAnimationDuration: 300,
+    });
   };
 
   const toggleFavorite = async (stockId: string) => {
@@ -406,7 +492,7 @@ export default function SwapScreen() {
       <Modal isVisible={actionModalVisible} onBackdropPress={closeActionModal}>
         <View style={styles.modalContent}>
           <Text style={styles.modalTitle}>
-            {selectedStock?.symbol}
+            Swap {selectedStock?.symbol} → USD
           </Text>
           <TextInput
             style={styles.modalInput}
@@ -417,6 +503,48 @@ export default function SwapScreen() {
             onChangeText={setAmount}
             autoFocus
           />
+
+          {isLoadingQuote && (
+            <View style={styles.quoteLoadingContainer}>
+              <ActivityIndicator size="small" color="#FFFFFF" />
+              <Text style={styles.quoteLoadingText}>Getting quote...</Text>
+            </View>
+          )}
+
+          {quoteError && (
+            <View style={styles.quoteErrorContainer}>
+              <Text style={styles.quoteErrorText}>{quoteError}</Text>
+            </View>
+          )}
+
+          {swapQuote && !isLoadingQuote && (
+            <View style={styles.quoteInfoContainer}>
+              <View style={styles.quoteInfoRow}>
+                <Text style={styles.quoteLabel}>You'll receive:</Text>
+                <Text style={styles.quoteValue}>
+                  {JupiterUltraService.fromBaseUnits(swapQuote.outAmount, 6).toFixed(2)} USD
+                </Text>
+              </View>
+
+              <View style={styles.quoteInfoRow}>
+                <Text style={styles.quoteLabel}>Exchange Rate:</Text>
+                <Text style={styles.quoteValue}>
+                  1 {selectedStock?.symbol} ≈ {(JupiterUltraService.fromBaseUnits(swapQuote.outAmount, 6) / JupiterUltraService.fromBaseUnits(swapQuote.inAmount, selectedStock?.decimals || 0)).toFixed(2)} USD
+                </Text>
+              </View>
+
+              <View style={styles.quoteInfoRow}>
+                <Text style={styles.quoteLabel}>Price Impact:</Text>
+                <Text style={[
+                  styles.quoteValue,
+                  parseFloat(swapQuote.priceImpactPct) > 1 ? styles.highImpact : null
+                ]}>
+                  {formatPriceImpact(swapQuote.priceImpactPct)}
+                </Text>
+              </View>
+            </View>
+          )}
+
           <View style={styles.modalButtonContainer}>
             <TouchableOpacity style={[styles.actionButton, styles.sellButton]} onPress={closeActionModal}>
               <Text style={styles.actionButtonText}>Cancel</Text>
@@ -424,7 +552,7 @@ export default function SwapScreen() {
             <TouchableOpacity
               style={[styles.actionButton, styles.buyButton]}
               onPress={handleAction}
-              disabled={!amount}
+              disabled={!amount || isLoadingQuote || !!quoteError}
             >
               <Text style={styles.buyButtonText}>{actionType === 'buy' ? 'Buy' : 'Sell'}</Text>
             </TouchableOpacity>
@@ -441,6 +569,7 @@ const styles = StyleSheet.create({
     paddingLeft: 10,
     paddingRight: 10,
     position: 'relative',
+    backgroundColor: "black"
   },
   searchContainer: {
     flexDirection: 'row',
@@ -747,5 +876,52 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     flexDirection: 'row',
     marginTop: 10,
+  },
+  // Swap Quote Styles
+  quoteLoadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    flexDirection: 'row',
+    backgroundColor: '#1E1E1E',
+  },
+  quoteLoadingText: {
+    color: '#FFFFFF',
+    marginLeft: 10,
+    fontSize: 14,
+  },
+  quoteErrorContainer: {
+    backgroundColor: 'rgba(255, 0, 0, 0.1)',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 15,
+  },
+  quoteErrorText: {
+    color: '#FF6B6B',
+    fontSize: 14,
+  },
+  quoteInfoContainer: {
+    backgroundColor: '#2E2E2E',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 15,
+  },
+  quoteInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+    backgroundColor: 'transparent',
+  },
+  quoteLabel: {
+    color: '#AAAAAA',
+    fontSize: 14,
+  },
+  quoteValue: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  highImpact: {
+    color: '#FF6B6B',
   }
 });

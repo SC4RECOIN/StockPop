@@ -2,17 +2,20 @@ import { BaseAsset } from '@/api/src/models';
 import { Connection, PublicKey } from '@solana/web3.js';
 
 const BASE_URL = 'https://lite-api.jup.ag/ultra/v1';
+const headers = { 'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36' }
 
 export interface JupiterUltraOrderResponse {
-  inputMint: string;
-  outputMint: string;
+  mode: string;
+  swapType: string;
+  router: string;
+  requestId: string;
   inAmount: string;
   outAmount: string;
   otherAmountThreshold: string;
   swapMode: string;
   slippageBps: number;
   priceImpactPct: string;
-  routePlan: Array<{
+  routePlan: {
     swapInfo: {
       ammKey: string;
       label: string;
@@ -24,23 +27,20 @@ export interface JupiterUltraOrderResponse {
       feeMint: string;
     };
     percent: number;
-  }>;
+    bps: number;
+  }[];
+  inputMint: string;
+  outputMint: string;
   feeBps: number;
-  transaction: string | null;
+  taker: string;
   gasless: boolean;
-  prioritizationType: string;
+  transaction: string;
   prioritizationFeeLamports: number;
-  requestId: string;
-  swapType: string;
-  quoteId?: string;
-  maker?: string;
-  taker?: string | null;
-  expireAt?: number | null;
-  contextSlot: number;
-  platformFee?: {
-    amount: string;
-    feeBps: number;
-  };
+  errorMessage?: string;
+  inUsdValue: number;
+  outUsdValue: number;
+  priceImpact: number;
+  swapUsdValue: number;
   totalTime: number;
 }
 
@@ -89,104 +89,73 @@ export class JupiterUltraService {
     amount: string | number,
     taker: string
   ): Promise<JupiterUltraOrderResponse> {
-    try {
-      console.log(`[JupiterUltraService] Input: ${inputMint} -> Output: ${outputMint}, Amount: ${amount}`);
-      const ultraOrderUrl = `${BASE_URL}/order`;
+    console.log(`[JupiterUltraService] Input: ${inputMint} -> Output: ${outputMint}, Amount: ${amount}`);
+    const ultraOrderUrl = `${BASE_URL}/order`;
 
-      const requestBody = {
-        inputMint,
-        outputMint,
-        amount: amount.toString(),
-        taker
-      };
+    const response = await fetch(`${ultraOrderUrl}?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amount}&taker=${taker}`);
+    console.log("Jupiter swap order response: ", response);
 
-      const response = await fetch(ultraOrderUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      console.error('[JupiterUltraService] Ultra order error:', {
+        status: response.status,
+        statusText: response.statusText,
+        errorData
       });
-
-      console.log("Jupiter swap order response: ", response);
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        console.error('[JupiterUltraService] Ultra order error:', {
-          status: response.status,
-          statusText: response.statusText,
-          errorData
-        });
-        throw new Error(
-          `Failed to get Ultra swap order: ${response.statusText}${errorData?.error ? ` - ${errorData.error}` : ''
-          }`
-        );
-      }
-
-      const data = await response.json();
-
-      if (!data.success || !data.data) {
-        console.error('[JupiterUltraService] Invalid Ultra order response:', data);
-        throw new Error(data.error || 'Invalid response from Ultra API');
-      }
-
-      console.log('[JupiterUltraService] ✅ Ultra swap order received');
-      return data.data;
-    } catch (error) {
-      console.error('[JupiterUltraService] Ultra swap order error:', error);
-      throw new Error(`Failed to get Ultra swap order: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to get swap order: ${response.statusText}${errorData?.error ? ` - ${errorData.error}` : ''
+        }`
+      );
     }
+
+    const data = await response.json();
+    console.log("[JupiterUltraService] ✅ Ultra swap order received:", JSON.stringify(data));
+
+    return data;
   }
 
   static async executeSwapOrder(
     signedTransaction: string,
     requestId: string
   ): Promise<JupiterUltraExecuteResponse> {
-    try {
-      console.log(`[JupiterUltraService] Request ID: ${requestId}`);
-      const ultraExecuteUrl = `${BASE_URL}/execute`;
+    console.log(`[JupiterUltraService] Request ID: ${requestId}`);
+    const ultraExecuteUrl = `${BASE_URL}/execute`;
 
-      const requestBody = {
-        signedTransaction,
-        requestId,
-      };
+    const requestBody = {
+      signedTransaction,
+      requestId,
+    };
 
-      const response = await fetch(ultraExecuteUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
+    const response = await fetch(ultraExecuteUrl, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(requestBody),
+    });
+
+    console.log("Jupiter execute response: ", response);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      console.error('[JupiterUltraService] Ultra execute error:', {
+        status: response.status,
+        statusText: response.statusText,
+        errorData
       });
-
-      console.log("Jupiter execute response: ", response);
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        console.error('[JupiterUltraService] Ultra execute error:', {
-          status: response.status,
-          statusText: response.statusText,
-          errorData
-        });
-        throw new Error(
-          `Failed to execute Ultra swap: ${response.statusText}${errorData?.error ? ` - ${errorData.error}` : ''
-          }`
-        );
-      }
-
-      const data = await response.json();
-
-      if (!data.success || !data.data) {
-        console.error('[JupiterUltraService] Invalid Ultra execute response:', data);
-        throw new Error(data.error || 'Invalid response from Ultra execute API');
-      }
-
-      console.log('[JupiterUltraService] ✅ Ultra swap executed');
-      return data.data;
-    } catch (error) {
-      console.error('[JupiterUltraService] Ultra execute error:', error);
-      throw new Error(`Failed to execute Ultra swap: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to execute swap: ${response.statusText}${errorData?.error ? ` - ${errorData.error}` : ''
+        }`
+      );
     }
+
+    const data = await response.json();
+
+    if (!data.success || !data.data) {
+      console.error('[JupiterUltraService] Invalid Ultra execute response:', data);
+      throw new Error(data.error || 'Invalid response from Ultra execute API');
+    }
+
+    console.log('[JupiterUltraService] ✅ Ultra swap executed');
+    return data.data;
   }
 
   static async getBalances(walletAddress: string): Promise<JupiterUltraBalancesResponse> {

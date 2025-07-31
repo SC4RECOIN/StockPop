@@ -102,6 +102,7 @@ export default function TabOneScreen() {
       <Text style={styles.title}>Upcoming</Text>
       <Text style={styles.feature}><Text style={{ fontWeight: 'bold' }}>Feeless trades.</Text> Make trades without needing SOL to pay for transactions 🙌</Text>
       <Text style={styles.feature}><Text style={{ fontWeight: 'bold' }}>2x stocks and ETFs.</Text> Trade with leverage 💪</Text>
+      <Text style={styles.feature}><Text style={{ fontWeight: 'bold' }}>Tranfer USD directly to your wallet.</Text> Deposit USD from your bank account 💰</Text>
     </View>
   );
 }
@@ -109,6 +110,7 @@ export default function TabOneScreen() {
 const styles = StyleSheet.create({
   container: {
     padding: 15,
+    backgroundColor: "black"
   },
   title: {
     fontSize: 20,
@@ -257,6 +259,7 @@ const loginStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
+    backgroundColor: "black"
   },
   loginTitle: {
     fontSize: 28,

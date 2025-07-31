@@ -15,11 +15,17 @@ import { NotifierWrapper } from 'react-native-notifier';
 import { PrivyProvider } from "@privy-io/expo";
 import { PrivyElements } from "@privy-io/expo/ui";
 import { WalletProvider } from '../components/WalletContext';
+import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
 
 export {
   // Catch any errors thrown by the Layout component.
   ErrorBoundary,
 } from 'expo-router';
+
+configureReanimatedLogger({
+  level: ReanimatedLogLevel.warn,
+  strict: false, // Reanimated runs in strict mode by default
+});
 
 export const unstable_settings = {
   // Ensure that reloading on `/modal` keeps a back button present.
