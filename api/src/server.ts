@@ -2,14 +2,26 @@ import { createExpressMiddleware } from '@trpc/server/adapters/express';
 import express from 'express';
 import { rateLimit } from 'express-rate-limit'
 import { appRouter } from './router';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Get the current file's path and directory
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 async function main() {
   // express implementation
   const app = express();
 
-  // For testing purposes, wait-on requests '/'
+  // Get absolute path to the landing directory
+  const landingPath = path.resolve(__dirname, 'landing');
+
+  // Serve static files from the landing directory
+  app.use(express.static(landingPath));
+
+  // Serve landing page at root
   app.get('/', (_req, res) => {
-    res.send('Server is running!');
+    res.sendFile(path.join(landingPath, 'index.html'));
   });
 
   app.use(
