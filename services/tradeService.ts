@@ -97,11 +97,12 @@ export class JupiterUltraService {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
-      console.error('[JupiterUltraService] Ultra order error:', {
+      console.error('[JupiterUltraService] order error:', {
         status: response.status,
         statusText: response.statusText,
         errorData
       });
+      console.error(`${ultraOrderUrl}?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amount}&taker=${taker}`)
       throw new Error(
         `Failed to get swap order: ${response.statusText}${errorData?.error ? ` - ${errorData.error}` : ''
         }`
