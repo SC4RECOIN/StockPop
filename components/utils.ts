@@ -13,3 +13,14 @@ export const getErrorAlert = (error: Error, title: string) => {
     },
   };
 }
+
+export const getInfoAlert = (title: string, description: string) => {
+  return {
+    title,
+    description,
+    Component: NotifierComponents.Notification,
+    containerStyle: {
+      marginTop: 50,
+    },
+  };
+}

@@ -17,8 +17,8 @@ import Modal from "react-native-modal";
 import { Notifier } from "react-native-notifier";
 import { Text, View } from "@/components/Themed";
 import { useApiClient } from "@/components/useApiClient";
-import { useQuery } from "@tanstack/react-query";
-import { getErrorAlert } from "@/components/utils";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getErrorAlert, getInfoAlert } from "@/components/utils";
 import { Ionicons, Octicons } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -30,11 +30,13 @@ import {
 } from "@/services/tradeService";
 import { useWallet } from "@/components/WalletContext";
 import { useDebounce } from "use-debounce";
+import { VersionedTransaction } from "@solana/web3.js";
 
 export default function SwapScreen() {
   const { stockId } = useLocalSearchParams<{ stockId: string }>();
   const client = useApiClient();
-  const { pubkey } = useWallet();
+  const queryClient = useQueryClient();
+  const { pubkey, signTransaction, signAndSendTransaction } = useWallet();
   const { data, error } = useQuery({
     queryKey: ["stocks"],
     queryFn: () => client.stocks.tradable.query(),
@@ -258,29 +260,30 @@ export default function SwapScreen() {
     return `${impact > 0 ? "+" : ""}${(impact * 100).toFixed(2)}%`;
   };
 
-  const handleAction = () => {
-    if (!swapQuote || !selectedStock || !pubkey) {
+  const handleAction = async () => {
+    if (!swapQuote || !selectedStock || !pubkey || !swapQuote.transaction) {
       console.error("Cannot execute swap: missing required data");
       return;
     }
 
-    console.log(`Executing swap: ${amount} ${selectedStock.symbol} -> USD`);
-    console.log(
-      `Quote details: Input: ${swapQuote.inAmount}, Output: ${swapQuote.outAmount}`
+    const unSignedTransaction = VersionedTransaction.deserialize(
+      Buffer.from(swapQuote.transaction, "base64")
+    );
+    const transaction = await signTransaction(unSignedTransaction);
+    await JupiterUltraService.executeSwapOrder(
+      transaction,
+      swapQuote.requestId
     );
 
-    // Here you would implement the actual swap execution using JupiterUltraService.executeUltraSwap
-    // For now, we'll just log the details and close the modal
-
+    await queryClient.invalidateQueries({ queryKey: ["balances", pubkey] });
     closeActionModal();
 
-    // Show a success notification
-    Notifier.showNotification({
-      title: "Swap Initiated",
-      description: `Swapping ${amount} ${selectedStock.symbol} to USD`,
-      duration: 3000,
-      showAnimationDuration: 300,
-    });
+    Notifier.showNotification(
+      getInfoAlert(
+        "Swap Initiated",
+        `Swapping ${amount} ${selectedStock.symbol} to USD`
+      )
+    );
   };
 
   const toggleFavorite = async (stockId: string) => {
