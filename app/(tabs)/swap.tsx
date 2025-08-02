@@ -32,33 +32,51 @@ import { useWallet } from "@/components/WalletContext";
 import { useDebounce } from "use-debounce";
 import { VersionedTransaction } from "@solana/web3.js";
 
+/**
+ * Swap screen for trading stocks and ETFs
+ */
 export default function SwapScreen() {
   const router = useRouter();
   const { stockId } = useLocalSearchParams<{ stockId: string }>();
   const client = useApiClient();
   const queryClient = useQueryClient();
   const { pubkey, signTransaction, solBalance } = useWallet();
+
+  // Fetch all tradable stocks
   const { data, error } = useQuery({
     queryKey: ["stocks"],
     queryFn: () => client.stocks.tradable.query(),
   });
-  const stocks: BaseAsset[] = data?.pools.map((p) => p.baseAsset) ?? [];
 
+  // Extract available stocks from pools
+  const stocks: BaseAsset[] = useMemo(
+    () => data?.pools.map((p) => p.baseAsset) ?? [],
+    [data?.pools]
+  );
+
+  // Search and selection state
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStock, setSelectedStock] = useState<BaseAsset | null>(null);
-
   const [showResults, setShowResults] = useState(false);
+
+  // Action states
   const [actionModalVisible, setActionModalVisible] = useState(false);
   const [actionType, setActionType] = useState<"buy" | "sell" | null>(null);
+
+  // UI states
   const [selectedTab, setSelectedTab] = useState("summary");
   const [tabAnimation] = useState(new Animated.Value(0));
   const [favorites, setFavorites] = useState<string[]>([]);
 
-  // debounce amount
+  /**
+   * Trade amount states with debounce to prevent excessive API calls
+   */
   const [amount, setAmount] = useState("");
   const [debouncedAmount] = useDebounce(amount, 1000);
 
-  // Swap quote states
+  /**
+   * Swap quote states for trading
+   */
   const [isLoadingQuote, setIsLoadingQuote] = useState(false);
   const [swapQuote, setSwapQuote] = useState<JupiterUltraOrderResponse | null>(
     null
@@ -66,158 +84,236 @@ export default function SwapScreen() {
   const [quoteError, setQuoteError] = useState<string | null>(null);
   const [signingLoading, setSigningLoading] = useState(false);
 
-  // chart data
+  /**
+   * Chart visualization states
+   */
   const [chartType, setChartType] = useState<"line" | "candles">("line");
-  const ticker = selectedStock?.symbol ?? "";
+  const ticker = useMemo(
+    () => selectedStock?.symbol ?? "",
+    [selectedStock?.symbol]
+  );
+  const { width: screenWidth } = Dimensions.get("window");
+
+  /**
+   * Chart data query
+   */
   const barData = useQuery({
     queryKey: ["stocks-bars", ticker],
     queryFn: () => client.stocks.bars.query({ ticker, barSize: 15 }),
     enabled: !!selectedStock,
   });
-  const { width: screenWidth } = Dimensions.get("window");
 
-  // balances
+  /**
+   * User balance data
+   */
   const { data: balanceData } = useQuery({
     queryKey: ["balances", pubkey],
     queryFn: () => client.wallet.balances.query(pubkey!.toBase58()),
     enabled: !!pubkey,
     refetchInterval: 10_000,
   });
-  const usdCash =
-    balanceData?.other["EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"] ?? 0;
-  const stockBalance =
-    balanceData?.pools.find((pool) => pool.baseAsset.id === selectedStock?.id)
-      ?.balance ?? 0;
 
+  /**
+   * Computed balance values
+   */
+  const usdCash = useMemo(
+    () =>
+      balanceData?.other["EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"] ?? 0,
+    [balanceData?.other]
+  );
+
+  const stockBalance = useMemo(
+    () =>
+      balanceData?.pools.find((pool) => pool.baseAsset.id === selectedStock?.id)
+        ?.balance ?? 0,
+    [balanceData?.pools, selectedStock?.id]
+  );
+
+  /**
+   * Stock news data
+   */
   const tickerData = useQuery({
     queryKey: ["stocks-news", ticker],
     queryFn: () => client.stocks.news.query(ticker),
     enabled: !!selectedStock,
   });
-  const news = tickerData.data?.news ?? [];
 
-  // transform bars
+  const news = useMemo(
+    () => tickerData.data?.news ?? [],
+    [tickerData.data?.news]
+  );
+
+  /**
+   * Transform stock price data for chart visualization
+   * Returns [lineChartData, candlestickData]
+   */
   const [lineData, candles] = useMemo(() => {
+    // Handle error state
     if (barData.failureReason) {
-      console.error("Error fetching stocks:", barData.failureReason);
+      console.error("Error fetching stock price data:", barData.failureReason);
       Notifier.showNotification(
         getErrorAlert(barData.failureReason, "Error loading price data")
       );
     }
 
+    // Handle empty data
     const data = barData.data?.bars;
     if (!data || data.length === 0) {
-      console.warn("No bar data available for the selected stock.");
+      console.warn("No price data available for the selected stock");
       return [[], []];
     }
 
+    // Transform to line chart format
     const line = data.map((bar) => ({
       timestamp: bar.t,
       value: bar.c,
     }));
 
-    const bar = data.map((bar) => ({
+    // Transform to candlestick format
+    const candlesticks = data.map((bar) => ({
       timestamp: bar.t,
       open: bar.o,
       high: bar.h,
       low: bar.l,
       close: bar.c,
     }));
-    return [line, bar];
+
+    return [line, candlesticks];
   }, [barData.failureReason, barData.data]);
 
-  // load favorites from AsyncStorage
-  useEffect(() => {
-    const loadFavorites = async () => {
+  /**
+   * Load favorites from AsyncStorage
+   */
+  const loadFavorites = useCallback(async () => {
+    try {
       const storedFavorites = await AsyncStorage.getItem("favorites");
       if (storedFavorites) {
         setFavorites(JSON.parse(storedFavorites));
       }
-    };
-    loadFavorites();
+    } catch (error) {
+      console.error("Error loading favorites:", error);
+    }
   }, []);
 
-  // load favorites on focus
+  // Initial favorites load
+  useEffect(() => {
+    loadFavorites();
+  }, [loadFavorites]);
+
+  // Reload favorites when screen is focused
   useFocusEffect(
     useCallback(() => {
-      const loadFavorites = async () => {
-        const storedFavorites = await AsyncStorage.getItem("favorites");
-        if (storedFavorites) {
-          setFavorites(JSON.parse(storedFavorites));
-        }
-      };
       loadFavorites();
-    }, [])
+    }, [loadFavorites])
   );
 
-  // set selected stock based on URL parameter or first stock
+  /**
+   * Set selected stock based on URL parameter or default to first stock
+   * This handles initial load and fallback options
+   */
   useEffect(() => {
-    if (stocks.length > 0) {
-      if (!selectedStock) {
-        if (stockId) {
-          // Find the stock with the matching ID from the URL parameters
-          const stockFromParams = stocks.find((stock) => stock.id === stockId);
-          if (stockFromParams) {
-            setSelectedStock(stockFromParams);
-          } else if (!selectedStock) {
-            // Fallback to the first stock if the requested stock isn't found
-            setSelectedStock(stocks[0]);
-          }
-        } else if (!selectedStock) {
-          // If no stockId parameter, default to the first stock
+    if (stocks.length === 0) return;
+
+    // If no stock is selected yet
+    if (!selectedStock) {
+      // Try to find stock from URL parameters
+      if (stockId) {
+        const stockFromParams = stocks.find((stock) => stock.id === stockId);
+
+        if (stockFromParams) {
+          setSelectedStock(stockFromParams);
+        } else {
+          // Fallback if requested stock not found
           setSelectedStock(stocks[0]);
         }
+      } else {
+        // Default to first stock if no specific request
+        setSelectedStock(stocks[0]);
       }
     }
 
+    // Handle any API errors
     if (error) {
       console.error("Error fetching stocks:", error);
       Notifier.showNotification(getErrorAlert(error, "Error loading stocks"));
     }
   }, [stocks, stockId, error, selectedStock]);
 
+  /**
+   * Update selected stock when URL parameter changes
+   * This handles navigation between different stocks
+   */
   useEffect(() => {
+    if (!stockId || stocks.length === 0) return;
+
     const stockFromParams = stocks.find((stock) => stock.id === stockId);
     if (stockFromParams) {
       setSelectedStock(stockFromParams);
     }
-  }, [stockId]);
+  }, [stockId, stocks]);
 
-  // Fetch quote when amount changes
+  /**
+   * Fetch swap quote whenever amount changes
+   * This uses a debounced amount to prevent excessive API calls
+   */
   useEffect(() => {
+    // Reset previous state
     setQuoteError(null);
     setSwapQuote(null);
-    fetchSwapQuote();
+
+    // Only fetch if we have an amount
+    if (debouncedAmount) {
+      fetchSwapQuote();
+    }
   }, [debouncedAmount]);
 
-  const filteredStocks = stocks.filter((stock) => {
-    const query = searchQuery.toLowerCase();
-    return (
-      stock.name.toLowerCase().includes(query) ||
-      stock.symbol.toLowerCase().includes(query)
-    );
-  });
+  /**
+   * Filter stocks based on search query
+   */
+  const filteredStocks = useMemo(() => {
+    if (!searchQuery.trim()) return stocks;
 
-  const handleStockSelect = (stock: BaseAsset) => {
+    const query = searchQuery.toLowerCase().trim();
+    return stocks.filter(
+      (stock) =>
+        stock.name.toLowerCase().includes(query) ||
+        stock.symbol.toLowerCase().includes(query)
+    );
+  }, [stocks, searchQuery]);
+
+  /**
+   * Handle stock selection from search results
+   */
+  const handleStockSelect = useCallback((stock: BaseAsset) => {
     Keyboard.dismiss();
     setSelectedStock(stock);
     setSearchQuery("");
     setShowResults(false);
-  };
+  }, []);
 
-  const handleActionPress = (type: "buy" | "sell") => {
+  /**
+   * Handle buy/sell action button press
+   */
+  const handleActionPress = useCallback((type: "buy" | "sell") => {
     setActionType(type);
     setActionModalVisible(true);
-  };
+  }, []);
 
-  const closeActionModal = () => {
+  /**
+   * Close the action modal and reset state
+   */
+  const closeActionModal = useCallback(() => {
     setActionModalVisible(false);
     setAmount("");
     setSwapQuote(null);
     setQuoteError(null);
-  };
+  }, []);
 
-  const fetchSwapQuote = async () => {
+  /**
+   * Fetch swap quote from Jupiter Ultra for the current trade
+   */
+  const fetchSwapQuote = useCallback(async () => {
+    // Validate required data
     if (
       !selectedStock ||
       !pubkey ||
@@ -274,51 +370,67 @@ export default function SwapScreen() {
     } finally {
       setIsLoadingQuote(false);
     }
-  };
+  }, [selectedStock, pubkey, debouncedAmount, actionType]);
 
-  // Format price impact percentage for display
-  const formatPriceImpact = (priceImpactPct: string | undefined) => {
-    if (!priceImpactPct) return "0.00%";
-    const impact = parseFloat(priceImpactPct);
-    return `${impact > 0 ? "+" : ""}${(impact * 100).toFixed(2)}%`;
-  };
+  /**
+   * Format price impact percentage for display
+   * Adds + sign for positive values and formats to 2 decimal places
+   */
+  const formatPriceImpact = useCallback(
+    (priceImpactPct: string | undefined) => {
+      if (!priceImpactPct) return "0.00%";
+      const impact = parseFloat(priceImpactPct);
+      return `${impact > 0 ? "+" : ""}${(impact * 100).toFixed(2)}%`;
+    },
+    []
+  );
 
-  const handleAction = async () => {
+  /**
+   * Execute the swap action (buy/sell)
+   */
+  const handleAction = useCallback(async () => {
+    // Validate all required data is present
     if (!swapQuote || !selectedStock || !pubkey || !swapQuote.transaction) {
-      console.error(
-        "Cannot execute swap: missing required data",
-        !swapQuote,
-        !selectedStock,
-        !pubkey,
-        !swapQuote?.transaction
-      );
+      console.error("Cannot execute swap: missing required data", {
+        noQuote: !swapQuote,
+        noStock: !selectedStock,
+        noPubkey: !pubkey,
+        noTransaction: !swapQuote?.transaction,
+      });
       return;
     }
 
     try {
+      // Prepare UI for transaction
       Keyboard.dismiss();
       setSigningLoading(true);
 
+      // Deserialize and sign transaction
       const unSignedTransaction = VersionedTransaction.deserialize(
         Buffer.from(swapQuote.transaction, "base64")
       );
       const transaction = await signTransaction(unSignedTransaction);
+
+      // Send the transaction
       await JupiterUltraService.executeSwapOrder(
         transaction,
         swapQuote.requestId
       );
 
-      // wait 5 seconds for transaction to be confirmed
+      // Wait for transaction to be confirmed
       await new Promise((resolve) => setTimeout(resolve, 5000));
 
+      // Refresh balances and close modal
       await queryClient.invalidateQueries({ queryKey: ["balances", pubkey] });
       closeActionModal();
 
+      // Navigate to portfolio with refresh parameter
       router.push({
         pathname: "/(tabs)",
         params: { balanceUpdate: selectedStock.id },
       });
 
+      // Show success notification
       Notifier.showNotification(
         getInfoAlert(
           "Swap Success",
@@ -329,220 +441,283 @@ export default function SwapScreen() {
       );
     } catch (error) {
       console.error("Error executing swap:", error);
+      Notifier.showNotification(
+        getErrorAlert(error as Error, "Error executing swap")
+      );
     } finally {
       setSigningLoading(false);
     }
-  };
+  }, [
+    swapQuote,
+    selectedStock,
+    pubkey,
+    actionType,
+    amount,
+    signTransaction,
+    queryClient,
+    closeActionModal,
+    router,
+  ]);
 
-  const toggleFavorite = async (stockId: string) => {
-    const updatedFavorites = favorites.includes(stockId)
-      ? favorites.filter((id) => id !== stockId)
-      : [...favorites, stockId];
+  /**
+   * Toggle favorite status for a stock
+   */
+  const toggleFavorite = useCallback(
+    async (stockId: string) => {
+      try {
+        // Update favorites array
+        const updatedFavorites = favorites.includes(stockId)
+          ? favorites.filter((id) => id !== stockId)
+          : [...favorites, stockId];
 
-    setFavorites(updatedFavorites);
-    await AsyncStorage.setItem("favorites", JSON.stringify(updatedFavorites));
-  };
-
-  const isFavorite = (stockId: string) => favorites.includes(stockId);
-
-  const renderStockItem = ({
-    item,
-    index,
-  }: {
-    item: BaseAsset;
-    index: number;
-  }) => (
-    <TouchableOpacity
-      style={[
-        styles.stockItem,
-        index === filteredStocks.length - 1 ? styles.lastStockItem : null,
-      ]}
-      onPress={() => handleStockSelect(item)}
-    >
-      <Image source={{ uri: item.icon }} style={styles.stockImage} />
-      <View style={styles.stockTextContainer}>
-        <Text style={styles.stockSymbol}>{item.symbol}</Text>
-        <Text style={styles.stockFullName}>{item.name}</Text>
-      </View>
-    </TouchableOpacity>
+        // Update state and persist to storage
+        setFavorites(updatedFavorites);
+        await AsyncStorage.setItem(
+          "favorites",
+          JSON.stringify(updatedFavorites)
+        );
+      } catch (error) {
+        console.error("Error toggling favorite:", error);
+      }
+    },
+    [favorites]
   );
 
-  const TabSection = ({ selectedTab }: { selectedTab: string }) => {
-    if (selectedTab === "summary") {
-      if (barData.isLoading) {
+  /**
+   * Check if a stock is in favorites
+   */
+  const isFavorite = useCallback(
+    (stockId: string) => favorites.includes(stockId),
+    [favorites]
+  );
+
+  /**
+   * Render a stock item in the search results list
+   */
+  const renderStockItem = useCallback(
+    ({ item, index }: { item: BaseAsset; index: number }) => (
+      <TouchableOpacity
+        style={[
+          styles.stockItem,
+          index === filteredStocks.length - 1 ? styles.lastStockItem : null,
+        ]}
+        onPress={() => handleStockSelect(item)}
+        accessibilityLabel={`Select ${item.symbol}`}
+      >
+        <Image source={{ uri: item.icon }} style={styles.stockImage} />
+        <View style={styles.stockTextContainer}>
+          <Text style={styles.stockSymbol}>{item.symbol}</Text>
+          <Text style={styles.stockFullName}>{item.name}</Text>
+        </View>
+      </TouchableOpacity>
+    ),
+    [filteredStocks.length, handleStockSelect]
+  );
+
+  /**
+   * Render different tab content based on the selected tab
+   */
+  const TabSection = useCallback(
+    ({ selectedTab }: { selectedTab: string }) => {
+      // Summary tab - displays price chart and basic info
+      if (selectedTab === "summary") {
+        // Show loading indicator while chart data is loading
+        if (barData.isLoading) {
+          return (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#ffffff" />
+            </View>
+          );
+        }
+
+        // Don't render if no data available
+        if (lineData.length === 0 && candles.length === 0) {
+          return null;
+        }
+
         return (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#ffffff" />
+          <View style={styles.tabContentContainer}>
+            <View style={styles.chartTypeToggle}>
+              <TouchableOpacity
+                style={[
+                  styles.chartTypeButton,
+                  chartType === "line" && styles.chartTypeButtonActive,
+                ]}
+                onPress={() => setChartType("line")}
+              >
+                <Text
+                  style={[
+                    styles.chartTypeText,
+                    chartType === "line" && styles.chartTypeTextActive,
+                  ]}
+                >
+                  Line
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.chartTypeButton,
+                  chartType === "candles" && styles.chartTypeButtonActive,
+                ]}
+                onPress={() => setChartType("candles")}
+              >
+                <Text
+                  style={[
+                    styles.chartTypeText,
+                    chartType === "candles" && styles.chartTypeTextActive,
+                  ]}
+                >
+                  Candles
+                </Text>
+              </TouchableOpacity>
+            </View>
+            {chartType === "line" ? (
+              <LineChart.Provider data={lineData}>
+                <LineChart width={screenWidth - 20} height={250}>
+                  <LineChart.Path color={"#9D00FF"}>
+                    <LineChart.Gradient />
+                  </LineChart.Path>
+                  <LineChart.CursorCrosshair color="white">
+                    <LineChart.Tooltip
+                      textStyle={{
+                        color: "white",
+                        fontSize: 14,
+                      }}
+                    />
+                  </LineChart.CursorCrosshair>
+                </LineChart>
+              </LineChart.Provider>
+            ) : (
+              <CandlestickChart.Provider data={candles}>
+                <CandlestickChart width={screenWidth - 20} height={250}>
+                  <CandlestickChart.Candles />
+                  <CandlestickChart.Crosshair>
+                    <CandlestickChart.Tooltip
+                      style={{ backgroundColor: "black" }}
+                      textStyle={{ color: "white", fontSize: 12 }}
+                    />
+                  </CandlestickChart.Crosshair>
+                </CandlestickChart>
+                <CandlestickChart.DatetimeText
+                  style={{ color: "white", fontSize: 12 }}
+                />
+              </CandlestickChart.Provider>
+            )}
+            {selectedStock && (
+              <View
+                style={[
+                  styles.discountAlert,
+                  {
+                    backgroundColor:
+                      selectedStock.stockData.price < selectedStock.usdPrice
+                        ? "rgba(255, 0, 0, 0.2)"
+                        : "rgba(0, 255, 0, 0.2)",
+                  },
+                ]}
+              >
+                <Octicons
+                  name="info"
+                  color="white"
+                  size={20}
+                  style={{ marginRight: 10 }}
+                />
+                <Text style={{ flex: 1, flexWrap: "wrap", color: "white" }}>
+                  This stock is trading{" "}
+                  {Math.abs(
+                    (1 -
+                      selectedStock.stockData.price / selectedStock.usdPrice) *
+                      100
+                  ).toFixed(2)}
+                  %{" "}
+                  {selectedStock.stockData.price > selectedStock.usdPrice
+                    ? "lower"
+                    : "higher"}{" "}
+                  on chain than it is on the stock market.
+                </Text>
+              </View>
+            )}
+          </View>
+        );
+      } else if (selectedTab === "news") {
+        return (
+          <View style={styles.tabContentContainer}>
+            {news.length === 0 ? (
+              <Text style={styles.tabContent}>No news available.</Text>
+            ) : (
+              news.map((item) => (
+                <View key={item.id} style={styles.newsTile}>
+                  <View style={styles.newsContent}>
+                    <View style={styles.newsTitleRow}>
+                      {item.image_url && (
+                        <Image
+                          source={{ uri: item.image_url }}
+                          style={styles.newsImage}
+                          resizeMode="cover"
+                        />
+                      )}
+                      <Text style={[styles.newsText, styles.newsTitle]}>
+                        {item.title}
+                      </Text>
+                    </View>
+                    <Text style={[styles.newsText, styles.newsDescription]}>
+                      {item.description}
+                    </Text>
+                  </View>
+                </View>
+              ))
+            )}
+          </View>
+        );
+      } else if (selectedTab === "profile") {
+        return (
+          <View style={styles.tabContentContainer}>
+            <View style={styles.pillContainer}>
+              {selectedStock?.sector && (
+                <Text style={styles.pill}>{selectedStock?.sector}</Text>
+              )}
+              {selectedStock?.industry && (
+                <Text style={styles.pill}>{selectedStock?.industry}</Text>
+              )}
+            </View>
+            <Text style={[styles.tabContent, styles.profileDescription]}>
+              {selectedStock?.description ||
+                "No profile information available."}
+            </Text>
           </View>
         );
       }
+      return null;
+    },
+    [
+      selectedTab,
+      barData.isLoading,
+      lineData,
+      candles,
+      screenWidth,
+      chartType,
+      selectedStock,
+      news,
+    ]
+  );
 
-      if (lineData.length === 0 && candles.length === 0) {
-        return null;
-      }
+  /**
+   * Handle tab selection with animation
+   */
+  const handleTabPress = useCallback(
+    (tab: string) => {
+      setSelectedTab(tab);
 
-      return (
-        <View style={styles.tabContentContainer}>
-          <View style={styles.chartTypeToggle}>
-            <TouchableOpacity
-              style={[
-                styles.chartTypeButton,
-                chartType === "line" && styles.chartTypeButtonActive,
-              ]}
-              onPress={() => setChartType("line")}
-            >
-              <Text
-                style={[
-                  styles.chartTypeText,
-                  chartType === "line" && styles.chartTypeTextActive,
-                ]}
-              >
-                Line
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.chartTypeButton,
-                chartType === "candles" && styles.chartTypeButtonActive,
-              ]}
-              onPress={() => setChartType("candles")}
-            >
-              <Text
-                style={[
-                  styles.chartTypeText,
-                  chartType === "candles" && styles.chartTypeTextActive,
-                ]}
-              >
-                Candles
-              </Text>
-            </TouchableOpacity>
-          </View>
-          {chartType === "line" ? (
-            <LineChart.Provider data={lineData}>
-              <LineChart width={screenWidth - 20} height={250}>
-                <LineChart.Path color={"#9D00FF"}>
-                  <LineChart.Gradient />
-                </LineChart.Path>
-                <LineChart.CursorCrosshair color="white">
-                  <LineChart.Tooltip
-                    textStyle={{
-                      color: "white",
-                      fontSize: 14,
-                    }}
-                  />
-                </LineChart.CursorCrosshair>
-              </LineChart>
-            </LineChart.Provider>
-          ) : (
-            <CandlestickChart.Provider data={candles}>
-              <CandlestickChart width={screenWidth - 20} height={250}>
-                <CandlestickChart.Candles />
-                <CandlestickChart.Crosshair>
-                  <CandlestickChart.Tooltip
-                    style={{ backgroundColor: "black" }}
-                    textStyle={{ color: "white", fontSize: 12 }}
-                  />
-                </CandlestickChart.Crosshair>
-              </CandlestickChart>
-              <CandlestickChart.DatetimeText
-                style={{ color: "white", fontSize: 12 }}
-              />
-            </CandlestickChart.Provider>
-          )}
-          {selectedStock && (
-            <View
-              style={[
-                styles.discountAlert,
-                {
-                  backgroundColor:
-                    selectedStock.stockData.price < selectedStock.usdPrice
-                      ? "rgba(255, 0, 0, 0.2)"
-                      : "rgba(0, 255, 0, 0.2)",
-                },
-              ]}
-            >
-              <Octicons
-                name="info"
-                color="white"
-                size={20}
-                style={{ marginRight: 10 }}
-              />
-              <Text style={{ flex: 1, flexWrap: "wrap", color: "white" }}>
-                This stock is trading{" "}
-                {Math.abs(
-                  (1 - selectedStock.stockData.price / selectedStock.usdPrice) *
-                    100
-                ).toFixed(2)}
-                %{" "}
-                {selectedStock.stockData.price > selectedStock.usdPrice
-                  ? "lower"
-                  : "higher"}{" "}
-                on chain than it is on the stock market.
-              </Text>
-            </View>
-          )}
-        </View>
-      );
-    } else if (selectedTab === "news") {
-      return (
-        <View style={styles.tabContentContainer}>
-          {news.length === 0 ? (
-            <Text style={styles.tabContent}>No news available.</Text>
-          ) : (
-            news.map((item) => (
-              <View key={item.id} style={styles.newsTile}>
-                <View style={styles.newsContent}>
-                  <View style={styles.newsTitleRow}>
-                    {item.image_url && (
-                      <Image
-                        source={{ uri: item.image_url }}
-                        style={styles.newsImage}
-                        resizeMode="cover"
-                      />
-                    )}
-                    <Text style={[styles.newsText, styles.newsTitle]}>
-                      {item.title}
-                    </Text>
-                  </View>
-                  <Text style={[styles.newsText, styles.newsDescription]}>
-                    {item.description}
-                  </Text>
-                </View>
-              </View>
-            ))
-          )}
-        </View>
-      );
-    } else if (selectedTab === "profile") {
-      return (
-        <View style={styles.tabContentContainer}>
-          <View style={styles.pillContainer}>
-            {selectedStock?.sector && (
-              <Text style={styles.pill}>{selectedStock?.sector}</Text>
-            )}
-            {selectedStock?.industry && (
-              <Text style={styles.pill}>{selectedStock?.industry}</Text>
-            )}
-          </View>
-          <Text style={[styles.tabContent, styles.profileDescription]}>
-            {selectedStock?.description || "No profile information available."}
-          </Text>
-        </View>
-      );
-    }
-    return null;
-  };
-
-  const handleTabPress = (tab: string) => {
-    setSelectedTab(tab);
-    Animated.timing(tabAnimation, {
-      toValue: 1,
-      duration: 300,
-      useNativeDriver: false,
-    }).start(() => {
-      tabAnimation.setValue(0);
-    });
-  };
+      // Animate tab transition
+      Animated.timing(tabAnimation, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: false,
+      }).start(() => {
+        tabAnimation.setValue(0);
+      });
+    },
+    [tabAnimation]
+  );
 
   const quoteOutput =
     swapQuote &&
