@@ -21,5 +21,5 @@ jobs:
 
       - name: Build the api Docker image
         run: |
-          docker build . --tag ghcr.io/sc4recoin/stockpop:api
+          cd api && docker build . --tag ghcr.io/sc4recoin/stockpop:api
           docker push ghcr.io/sc4recoin/stockpop:api
