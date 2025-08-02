@@ -5,7 +5,7 @@ on:
   push:
     paths:
       - api/**
-      - .github/workflows/publish.yml
+      - .github/workflows/**
 
 jobs:
   publish-docker-image:
