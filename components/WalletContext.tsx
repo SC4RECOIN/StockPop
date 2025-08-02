@@ -13,7 +13,7 @@ import { SolanaSignTransactions } from "@solana-mobile/mobile-wallet-adapter-pro
 const APP_IDENTITY = {
   name: "StockPop",
   url: "https://stockpop-production.up.railway.app",
-  icon: "favicon.ico",
+  icon: "pop.ico",
 };
 
 type WalletContextType = {

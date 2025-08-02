@@ -10,7 +10,9 @@
     "build": "esbuild src/server.ts --bundle --packages=external --platform=node --format=esm --outdir=dist --sourcemap",
     "start": "npm dev",
     "test-dev": "start-server-and-test 'tsx src/server' 3000 'tsx src/client'",
-    "test-start": "start-server-and-test 'node dist/server' 3000 'node dist/client'"
+    "test-start": "start-server-and-test 'node dist/server' 3000 'node dist/client'",
+    "docker-build": "docker build . --tag ghcr.io/sc4recoin/stockpop:api",
+    "docker-push": "docker push ghcr.io/sc4recoin/stockpop:api"
   },
   "dependencies": {
     "@polygon.io/client-js": "^8.0.0",
