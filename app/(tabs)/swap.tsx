@@ -12,7 +12,7 @@ import {
   ActivityIndicator,
   Dimensions,
 } from "react-native";
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, use } from "react";
 import Modal from "react-native-modal";
 import { Notifier } from "react-native-notifier";
 import { Text, View } from "@/components/Themed";
@@ -175,6 +175,13 @@ export default function SwapScreen() {
       Notifier.showNotification(getErrorAlert(error, "Error loading stocks"));
     }
   }, [stocks, stockId, error, selectedStock]);
+
+  useEffect(() => {
+    const stockFromParams = stocks.find((stock) => stock.id === stockId);
+    if (stockFromParams) {
+      setSelectedStock(stockFromParams);
+    }
+  }, [stockId]);
 
   // Fetch quote when amount changes
   useEffect(() => {
