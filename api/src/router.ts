@@ -225,7 +225,7 @@ export const appRouter = router({
           other: balances,
         };
 
-        cache.set(key, resp, 2); // cache for 10 seconds
+        cache.set(key, resp, 2); // cache for 2 seconds
 
         return resp;
       } catch (error: any) {

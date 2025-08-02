@@ -122,6 +122,12 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
         signedTransaction = result.signedTransaction;
       } else if (pubkey) {
         signedTransaction = await transact(async (wallet: Web3MobileWallet) => {
+          // Authorize the wallet session
+          await wallet.authorize({
+            chain: "solana:mainnet-beta",
+            identity: APP_IDENTITY,
+          });
+
           const txns = await wallet.signTransactions({
             transactions: [transaction],
           });
@@ -180,7 +186,6 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
           const authorizationResult = await wallet.authorize({
             identity: APP_IDENTITY,
             chain: "solana:mainnet-beta",
-            features: [SolanaSignTransactions],
           });
 
           return authorizationResult;
@@ -219,8 +224,9 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
       try {
         await transact(async (wallet: Web3MobileWallet) => {
-          const result = await wallet.reauthorize({
+          const result = await wallet.authorize({
             identity: APP_IDENTITY,
+            chain: "solana:mainnet-beta",
             auth_token: token,
           });
 

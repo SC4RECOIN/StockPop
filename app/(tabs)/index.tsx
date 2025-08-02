@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Text, View } from "@/components/Themed";
-import { useLoginWithOAuth } from "@privy-io/expo";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { useCallback, useEffect } from "react";
 import { getErrorAlert, getInfoAlert } from "@/components/utils";
@@ -16,7 +15,7 @@ import { useWallet } from "@/components/WalletContext";
 import { ApiTypes, useApiClient } from "@/components/useApiClient";
 import { useQuery } from "@tanstack/react-query";
 import Decimal from "decimal.js";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useLogin } from "@privy-io/expo/ui";
 import Octicons from "@react-native-vector-icons/octicons";
 import * as Clipboard from "expo-clipboard";
@@ -25,13 +24,14 @@ type Pool = ApiTypes["wallet"]["balances"]["pools"][number];
 
 export default function TabOneScreen() {
   const router = useRouter();
+  const { balanceUpdate } = useLocalSearchParams<{ balanceUpdate?: string }>();
   const { pubkey } = useWallet();
   const client = useApiClient();
   const { data, isLoading, error } = useQuery({
     queryKey: ["balances", pubkey],
     queryFn: () => client.wallet.balances.query(pubkey!.toBase58()),
     enabled: !!pubkey,
-    refetchInterval: 5_000,
+    refetchInterval: balanceUpdate ? 1000 : 10000,
   });
 
   useEffect(() => {

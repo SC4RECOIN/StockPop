@@ -278,11 +278,18 @@ export default function SwapScreen() {
 
   const handleAction = async () => {
     if (!swapQuote || !selectedStock || !pubkey || !swapQuote.transaction) {
-      console.error("Cannot execute swap: missing required data");
+      console.error(
+        "Cannot execute swap: missing required data",
+        !swapQuote,
+        !selectedStock,
+        !pubkey,
+        !swapQuote?.transaction
+      );
       return;
     }
 
     try {
+      Keyboard.dismiss();
       setSigningLoading(true);
 
       const unSignedTransaction = VersionedTransaction.deserialize(
@@ -302,12 +309,15 @@ export default function SwapScreen() {
 
       router.push({
         pathname: "/(tabs)",
+        params: { balanceUpdate: selectedStock.id },
       });
 
       Notifier.showNotification(
         getInfoAlert(
           "Swap Success",
-          `Swapped ${amount} ${selectedStock.symbol}`
+          `${actionType === "buy" ? "Bought" : "Sold"} ${amount} ${
+            selectedStock.symbol
+          }`
         )
       );
     } catch (error) {
