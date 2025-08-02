@@ -9,6 +9,7 @@ import { toUint8Array } from "js-base64";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { SolanaSignTransactions } from "@solana-mobile/mobile-wallet-adapter-protocol";
+import { useQuery } from "@tanstack/react-query";
 
 const APP_IDENTITY = {
   name: "StockPop",
@@ -28,6 +29,7 @@ type WalletContextType = {
   ) => Promise<VersionedTransaction>;
   connectWallet: () => Promise<void>;
   connecting: boolean;
+  solBalance: number;
 };
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
@@ -51,6 +53,18 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     process.env.EXPO_PUBLIC_SOLANA_RPC_URL!,
     "confirmed"
   );
+
+  // wallet SOL balance
+  const { data: solBalance, ...other } = useQuery({
+    queryKey: ["solBalance"],
+    queryFn: async () => {
+      const address = (pubkey ?? privyPubkey)!;
+      const balance = await connection.getBalance(address);
+      return balance / 1e9; // Convert lamports to SOL
+    },
+    refetchInterval: 10000, // Refetch every 10 seconds
+    enabled: !!(pubkey ?? privyPubkey),
+  });
 
   // sign and send with local or privy wallet
   const signAndSendTransaction = async (transaction: VersionedTransaction) => {
@@ -238,6 +252,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     signTransaction,
     connectWallet,
     connecting,
+    solBalance: solBalance ?? 0,
   };
 
   return (

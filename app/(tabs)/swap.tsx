@@ -36,7 +36,7 @@ export default function SwapScreen() {
   const { stockId } = useLocalSearchParams<{ stockId: string }>();
   const client = useApiClient();
   const queryClient = useQueryClient();
-  const { pubkey, signTransaction, signAndSendTransaction } = useWallet();
+  const { pubkey, signTransaction, solBalance } = useWallet();
   const { data, error } = useQuery({
     queryKey: ["stocks"],
     queryFn: () => client.stocks.tradable.query(),
@@ -63,6 +63,7 @@ export default function SwapScreen() {
     null
   );
   const [quoteError, setQuoteError] = useState<string | null>(null);
+  const [signingLoading, setSigningLoading] = useState(false);
 
   const [chartType, setChartType] = useState<"line" | "candles">("line");
   const ticker = selectedStock?.symbol ?? "";
@@ -266,24 +267,35 @@ export default function SwapScreen() {
       return;
     }
 
-    const unSignedTransaction = VersionedTransaction.deserialize(
-      Buffer.from(swapQuote.transaction, "base64")
-    );
-    const transaction = await signTransaction(unSignedTransaction);
-    await JupiterUltraService.executeSwapOrder(
-      transaction,
-      swapQuote.requestId
-    );
+    try {
+      setSigningLoading(true);
 
-    await queryClient.invalidateQueries({ queryKey: ["balances", pubkey] });
-    closeActionModal();
+      const unSignedTransaction = VersionedTransaction.deserialize(
+        Buffer.from(swapQuote.transaction, "base64")
+      );
+      const transaction = await signTransaction(unSignedTransaction);
+      await JupiterUltraService.executeSwapOrder(
+        transaction,
+        swapQuote.requestId
+      );
 
-    Notifier.showNotification(
-      getInfoAlert(
-        "Swap Initiated",
-        `Swapping ${amount} ${selectedStock.symbol} to USD`
-      )
-    );
+      // wait 5 seconds for transaction to be confirmed
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+
+      await queryClient.invalidateQueries({ queryKey: ["balances", pubkey] });
+      closeActionModal();
+
+      Notifier.showNotification(
+        getInfoAlert(
+          "Swap Initiated",
+          `Swapping ${amount} ${selectedStock.symbol} to USD`
+        )
+      );
+    } catch (error) {
+      console.error("Error executing swap:", error);
+    } finally {
+      setSigningLoading(false);
+    }
   };
 
   const toggleFavorite = async (stockId: string) => {
@@ -504,6 +516,9 @@ export default function SwapScreen() {
       actionType === "buy" ? selectedStock.decimals : 6
     );
 
+  const solThreshold = 0.005;
+  const solBelowThreshold = solBalance < solThreshold;
+
   return (
     <View style={styles.container}>
       <TouchableWithoutFeedback
@@ -671,6 +686,14 @@ export default function SwapScreen() {
             </View>
           )}
 
+          {solBelowThreshold && (
+            <View style={styles.quoteErrorContainer}>
+              <Text style={styles.quoteErrorText}>
+                Insufficient SOL balance for transaction
+              </Text>
+            </View>
+          )}
+
           {swapQuote && !isLoadingQuote && quoteOutput && (
             <View style={styles.quoteInfoContainer}>
               <View style={styles.quoteInfoRow}>
@@ -725,7 +748,9 @@ export default function SwapScreen() {
             <TouchableOpacity
               style={[styles.actionButton, styles.buyButton]}
               onPress={handleAction}
-              disabled={!amount || isLoadingQuote || !!quoteError}
+              disabled={
+                !amount || isLoadingQuote || !!quoteError || solBelowThreshold
+              }
             >
               <Text style={styles.buyButtonText}>
                 {actionType === "buy" ? "Buy" : "Sell"}

@@ -7,6 +7,12 @@ on:
       - api/**
       - .github/workflows/**
 
+permissions:
+  contents: read
+  packages: write
+  attestations: write
+  id-token: write
+
 jobs:
   publish-docker-image:
     runs-on: ubuntu-latest

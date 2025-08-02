@@ -5,22 +5,24 @@ export const getErrorAlert = (error: Error, title: string) => {
     title,
     description: error.message,
     Component: NotifierComponents.Alert,
+    duration: 5000,
     componentProps: {
-      alertType: 'error' as 'error' | 'warn' | 'info' | 'success',
+      alertType: "error" as "error" | "warn" | "info" | "success",
     },
     containerStyle: {
-      marginTop: 50,
+      marginTop: 60,
     },
   };
-}
+};
 
 export const getInfoAlert = (title: string, description: string) => {
   return {
     title,
     description,
+    duration: 8000,
     Component: NotifierComponents.Notification,
     containerStyle: {
-      marginTop: 50,
+      marginTop: 560,
     },
   };
-}
+};
