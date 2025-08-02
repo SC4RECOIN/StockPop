@@ -1,10 +1,11 @@
 
-name: publish
+name: publish-docker-image
 
 on:
   push:
     paths:
       - api/**
+      - .github/workflows/publish.yml
 
 jobs:
   publish-docker-image:
