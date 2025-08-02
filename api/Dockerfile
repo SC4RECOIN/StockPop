@@ -28,4 +28,4 @@ ENV SOLANA_RPC_URL=""
 ENV POLYGON_API_KEY=""
 
 # Copy the start script
-CMD find /app/dist -type d && echo "Starting server..." && node --env-file=.env dist/server.js
+CMD find /app/dist -type d && echo "Starting server..." && node dist/server.js
