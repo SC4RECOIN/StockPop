@@ -31,7 +31,7 @@ export default function TabOneScreen() {
     queryKey: ["balances", pubkey],
     queryFn: () => client.wallet.balances.query(pubkey!.toBase58()),
     enabled: !!pubkey,
-    refetchInterval: 10_000,
+    refetchInterval: 5_000,
   });
 
   useEffect(() => {

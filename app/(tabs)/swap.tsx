@@ -20,7 +20,7 @@ import { useApiClient } from "@/components/useApiClient";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getErrorAlert, getInfoAlert } from "@/components/utils";
 import { Ionicons, Octicons } from "@expo/vector-icons";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 import { CandlestickChart, LineChart } from "react-native-wagmi-charts";
@@ -33,6 +33,7 @@ import { useDebounce } from "use-debounce";
 import { VersionedTransaction } from "@solana/web3.js";
 
 export default function SwapScreen() {
+  const router = useRouter();
   const { stockId } = useLocalSearchParams<{ stockId: string }>();
   const client = useApiClient();
   const queryClient = useQueryClient();
@@ -65,6 +66,7 @@ export default function SwapScreen() {
   const [quoteError, setQuoteError] = useState<string | null>(null);
   const [signingLoading, setSigningLoading] = useState(false);
 
+  // chart data
   const [chartType, setChartType] = useState<"line" | "candles">("line");
   const ticker = selectedStock?.symbol ?? "";
   const barData = useQuery({
@@ -73,6 +75,19 @@ export default function SwapScreen() {
     enabled: !!selectedStock,
   });
   const { width: screenWidth } = Dimensions.get("window");
+
+  // balances
+  const { data: balanceData } = useQuery({
+    queryKey: ["balances", pubkey],
+    queryFn: () => client.wallet.balances.query(pubkey!.toBase58()),
+    enabled: !!pubkey,
+    refetchInterval: 10_000,
+  });
+  const usdCash =
+    balanceData?.other["EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"] ?? 0;
+  const stockBalance =
+    balanceData?.pools.find((pool) => pool.baseAsset.id === selectedStock?.id)
+      ?.balance ?? 0;
 
   const tickerData = useQuery({
     queryKey: ["stocks-news", ticker],
@@ -285,10 +300,14 @@ export default function SwapScreen() {
       await queryClient.invalidateQueries({ queryKey: ["balances", pubkey] });
       closeActionModal();
 
+      router.push({
+        pathname: "/(tabs)",
+      });
+
       Notifier.showNotification(
         getInfoAlert(
-          "Swap Initiated",
-          `Swapping ${amount} ${selectedStock.symbol} to USD`
+          "Swap Success",
+          `Swapped ${amount} ${selectedStock.symbol}`
         )
       );
     } catch (error) {
@@ -663,15 +682,47 @@ export default function SwapScreen() {
           <Text style={styles.modalTitle}>
             {actionType === "buy" ? "Buy" : "Sell"} {selectedStock?.symbol}
           </Text>
-          <TextInput
-            style={styles.modalInput}
-            placeholder="Enter amount"
-            placeholderTextColor="#888"
-            keyboardType="numeric"
-            value={amount}
-            onChangeText={setAmount}
-            autoFocus
-          />
+          <View style={styles.balanceInfo}>
+            <Text style={styles.balanceLabel}>Available:</Text>
+            <TouchableOpacity
+              onPress={() => {
+                if (actionType === "buy") {
+                  setAmount(usdCash.toString());
+                } else {
+                  setAmount(stockBalance.toString());
+                }
+              }}
+            >
+              <Text style={[styles.balanceValue]}>
+                {actionType === "buy"
+                  ? `${usdCash.toFixed(2)} USD`
+                  : `${stockBalance.toFixed(6)} ${selectedStock?.symbol}`}{" "}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.modalInput}
+              placeholder="Enter amount"
+              placeholderTextColor="#888"
+              keyboardType="numeric"
+              value={amount}
+              onChangeText={setAmount}
+              autoFocus
+            />
+            <TouchableOpacity
+              style={styles.maxButton}
+              onPress={() => {
+                if (actionType === "buy") {
+                  setAmount(usdCash.toString());
+                } else {
+                  setAmount(stockBalance.toString());
+                }
+              }}
+            >
+              <Text style={styles.maxButtonText}>MAX</Text>
+            </TouchableOpacity>
+          </View>
 
           {isLoadingQuote && (
             <View style={styles.quoteLoadingContainer}>
@@ -689,7 +740,7 @@ export default function SwapScreen() {
           {solBelowThreshold && (
             <View style={styles.quoteErrorContainer}>
               <Text style={styles.quoteErrorText}>
-                Insufficient SOL balance for transaction
+                SOL balance for transaction might be too low
               </Text>
             </View>
           )}
@@ -749,12 +800,18 @@ export default function SwapScreen() {
               style={[styles.actionButton, styles.buyButton]}
               onPress={handleAction}
               disabled={
-                !amount || isLoadingQuote || !!quoteError || solBelowThreshold
+                !amount || isLoadingQuote || !!quoteError || signingLoading
               }
             >
-              <Text style={styles.buyButtonText}>
-                {actionType === "buy" ? "Buy" : "Sell"}
-              </Text>
+              {isLoadingQuote || signingLoading ? (
+                <View style={styles.loadingButtonContent}>
+                  <ActivityIndicator size="small" color="#000000" />
+                </View>
+              ) : (
+                <Text style={styles.buyButtonText}>
+                  {actionType === "buy" ? "Buy" : "Sell"}
+                </Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -925,8 +982,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#2E2E2E",
     borderRadius: 8,
     color: "#FFFFFF",
-    marginBottom: 15,
     fontSize: 16,
+    flex: 1,
   },
   modalButtonContainer: {
     flexDirection: "row",
@@ -1123,5 +1180,48 @@ const styles = StyleSheet.create({
   },
   highImpact: {
     color: "#FF6B6B",
+  },
+  loadingButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "white",
+  },
+  loadingButtonText: {
+    marginLeft: 8,
+  },
+  balanceInfo: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 12,
+    backgroundColor: "#1E1E1E",
+    padding: 5,
+  },
+  balanceLabel: {
+    color: "#AAAAAA",
+    fontSize: 14,
+  },
+  balanceValue: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  maxButton: {
+    position: "absolute",
+    right: 10,
+    backgroundColor: "#333",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 4,
+  },
+  maxButtonText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "bold",
   },
 });

@@ -19,10 +19,10 @@ export const getInfoAlert = (title: string, description: string) => {
   return {
     title,
     description,
-    duration: 8000,
+    duration: 5000,
     Component: NotifierComponents.Notification,
     containerStyle: {
-      marginTop: 560,
+      marginTop: 60,
     },
   };
 };
