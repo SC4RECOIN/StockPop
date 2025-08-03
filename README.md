@@ -18,7 +18,7 @@ This app is only developed and tested on Android. Also, expect some issues if [M
 
 The app is developed using Expo. Simply install all the dependencies and run the app with `expo start`. Note that Expo Go does not work with the MWA so you must use a development build.
 
-The API is under the `/api` dir. Is is just a simple [trpc](https://github.com/trpc/trpc) express app.
+The API is under the `/api` dir. It is just a simple [trpc](https://github.com/trpc/trpc) express app.
 
 ## Testing
 
