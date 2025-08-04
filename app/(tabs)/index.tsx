@@ -48,14 +48,7 @@ export default function PortfolioScreen() {
     }
   }, [error]);
 
-  // Show login screen if not connected
-  if (!pubkey) {
-    return <LoginScreen />;
-  }
-
-  /**
-   * Position item component - displays a single stock position
-   */
+  // Position item component - displays a single stock position
   const PositionItem = useCallback(
     ({ item }: PositionItemProps) => {
       const asset = item.baseAsset;
@@ -109,9 +102,7 @@ export default function PortfolioScreen() {
     return { pools, noPositions, usdCash };
   }, [data]);
 
-  /**
-   * Copy wallet address to clipboard
-   */
+  // Copy wallet address to clipboard
   const handleCopyAddress = useCallback(async () => {
     if (pubkey) {
       await Clipboard.setStringAsync(pubkey.toBase58());
@@ -121,9 +112,7 @@ export default function PortfolioScreen() {
     }
   }, [pubkey]);
 
-  /**
-   * Render the account deposit instructions section
-   */
+  // Render the account deposit instructions section
   const renderDepositInstructions = () => {
     if (portfolioData.usdCash > 0 || !pubkey) return null;
 
@@ -142,9 +131,7 @@ export default function PortfolioScreen() {
     );
   };
 
-  /**
-   * Render the upcoming features section
-   */
+  // Render the upcoming features section
   const renderUpcomingFeatures = () => (
     <>
       <Text style={styles.title}>Upcoming</Text>
@@ -164,6 +151,11 @@ export default function PortfolioScreen() {
       </Text>
     </>
   );
+
+  // Show login screen if not connected
+  if (!pubkey) {
+    return <LoginScreen />;
+  }
 
   return (
     <View style={styles.container}>
