@@ -167,6 +167,7 @@ export default function DiscoverScreen() {
           <TouchableOpacity
             onPress={() => toggleFavorite(asset.id)}
             style={styles.favoriteButton}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Ionicons
               name={isStockFavorite ? "star" : "star-outline"}
@@ -328,8 +329,9 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   favoriteButton: {
-    padding: 2,
+    padding: 8,
     justifyContent: "center",
     alignItems: "center",
+    borderRadius: 20,
   },
 });
