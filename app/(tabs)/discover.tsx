@@ -10,7 +10,7 @@ import { View, Text } from "@/components/Themed";
 import Decimal from "decimal.js";
 import { useQuery } from "@tanstack/react-query";
 import { ApiTypes, useApiClient } from "@/components/useApiClient";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { Notifier } from "react-native-notifier";
 import { getErrorAlert } from "@/components/utils";
 import { useRouter } from "expo-router";
@@ -18,45 +18,56 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 
+// Types
 type Pool = ApiTypes["stocks"]["tradable"]["pools"][number];
+type StockItemProps = { item: Pool };
+type SectionData = {
+  title: string;
+  data: Pool[];
+};
 
+/**
+ * Discover screen showing all available stocks and ETFs
+ */
 export default function DiscoverScreen() {
   const router = useRouter();
   const client = useApiClient();
+
+  // Query all tradable stocks
   const { data, isLoading, error } = useQuery({
     queryKey: ["stocks"],
     queryFn: () => client.stocks.tradable.query(),
   });
+
+  // State for user favorites
   const [favorites, setFavorites] = useState<string[]>([]);
 
+  // Load favorites on initial render
   useEffect(() => {
-    const loadFavorites = async () => {
-      const storedFavorites = await AsyncStorage.getItem("favorites");
-      if (storedFavorites) {
-        setFavorites(JSON.parse(storedFavorites));
-      }
-    };
     loadFavorites();
   }, []);
 
+  // Reload favorites when screen is focused
   useFocusEffect(
     useCallback(() => {
-      const loadFavorites = async () => {
-        const storedFavorites = await AsyncStorage.getItem("favorites");
-        if (storedFavorites) {
-          setFavorites(JSON.parse(storedFavorites));
-        }
-      };
       loadFavorites();
     }, [])
   );
 
+  // Handle API errors
   useEffect(() => {
     if (error) {
       console.error("Error fetching stocks:", error);
       Notifier.showNotification(getErrorAlert(error, "Error loading stocks"));
     }
   }, [error]);
+
+  const loadFavorites = async () => {
+    const storedFavorites = await AsyncStorage.getItem("favorites");
+    if (storedFavorites) {
+      setFavorites(JSON.parse(storedFavorites));
+    }
+  };
 
   const toggleFavorite = async (stockId: string) => {
     const updatedFavorites = favorites.includes(stockId)
@@ -67,81 +78,126 @@ export default function DiscoverScreen() {
     await AsyncStorage.setItem("favorites", JSON.stringify(updatedFavorites));
   };
 
-  const isFavorite = (stockId: string) => favorites.includes(stockId);
+  const isFavorite = useCallback(
+    (stockId: string) => favorites.includes(stockId),
+    [favorites]
+  );
 
-  const renderStockItem = ({ item }: { item: Pool }) => {
-    const asset = item.baseAsset;
-    const priceChange = new Decimal(asset.stats24h.priceChange ?? 0)
-      .div(asset.usdPrice)
-      .mul(100);
-
-    const formatter = new Intl.NumberFormat("en-US", {
+  // Format large numbers with abbreviations
+  const formatter = useMemo(() => {
+    return new Intl.NumberFormat("en-US", {
       notation: "compact",
       compactDisplay: "short",
     }).format;
+  }, []);
 
-    const handleStockPress = () => {
+  const handleStockPress = useCallback(
+    (stockId: string) => {
       router.push({
         pathname: "/(tabs)/swap",
-        params: { stockId: asset.id },
+        params: { stockId },
       });
-    };
+    },
+    [router]
+  );
 
-    return (
-      <TouchableOpacity style={styles.stockItem} onPress={handleStockPress}>
-        <Image source={{ uri: asset.icon }} style={styles.stockImage} />
+  const renderStockItem = useCallback(
+    ({ item }: StockItemProps) => {
+      const asset = item.baseAsset;
+      const priceChange = new Decimal(asset.stats24h?.priceChange ?? 0)
+        .div(asset.usdPrice)
+        .mul(100);
 
-        <View style={styles.stockInfo}>
-          <Text style={styles.ticker}>{asset.symbol}</Text>
-          <Text style={styles.name}>{asset.name}</Text>
-        </View>
+      const isStockFavorite = isFavorite(asset.id);
 
-        <View style={styles.priceContainer}>
-          <Text style={styles.price}>${asset.stockData.price.toFixed(2)}</Text>
-          <Text
-            style={[
-              styles.change,
-              { color: priceChange.isPositive() ? "#4CAF50" : "#F44336" },
-            ]}
-          >
-            {priceChange.toFixed(2)}%
-          </Text>
-        </View>
-
-        <View style={styles.mcapInfo}>
-          <Text style={styles.ticker}>{formatter(asset.stockData.mcap)}</Text>
-          <Text style={styles.name}>{formatter(asset.mcap)}</Text>
-        </View>
-
+      return (
         <TouchableOpacity
-          onPress={() => toggleFavorite(asset.id)}
-          style={styles.favoriteButton}
+          style={styles.stockItem}
+          onPress={() => handleStockPress(asset.id)}
         >
-          <Ionicons
-            name={isFavorite(asset.id) ? "star" : "star-outline"}
-            size={20}
-            color={isFavorite(asset.id) ? "#FFFFFF" : "#666"}
-            style={styles.favoriteIcon}
-          />
-        </TouchableOpacity>
-      </TouchableOpacity>
-    );
-  };
+          <Image source={{ uri: asset.icon }} style={styles.stockImage} />
 
-  const favoritesData =
-    data?.pools.filter((pool) => favorites.includes(pool.baseAsset.id)) ?? [];
-  const stocksData =
-    data?.pools.filter(
-      (pool) =>
-        pool.baseAsset.category === "stock" &&
-        !favorites.includes(pool.baseAsset.id)
-    ) ?? [];
-  const etfsData =
-    data?.pools.filter(
-      (pool) =>
-        pool.baseAsset.category === "etf" &&
-        !favorites.includes(pool.baseAsset.id)
-    ) ?? [];
+          <View style={styles.stockInfo}>
+            <Text style={styles.ticker}>{asset.symbol}</Text>
+            <Text style={styles.name}>{asset.name}</Text>
+          </View>
+
+          <View style={styles.priceContainer}>
+            <Text style={styles.price}>
+              ${asset.stockData.price.toFixed(2)}
+            </Text>
+            <Text
+              style={[
+                styles.change,
+                { color: priceChange.isPositive() ? "#4CAF50" : "#F44336" },
+              ]}
+            >
+              {priceChange.toFixed(2)}%
+            </Text>
+          </View>
+
+          <View style={styles.mcapInfo}>
+            <Text style={styles.ticker}>{formatter(asset.stockData.mcap)}</Text>
+            <Text style={styles.name}>{formatter(asset.mcap)}</Text>
+          </View>
+
+          <TouchableOpacity
+            onPress={() => toggleFavorite(asset.id)}
+            style={styles.favoriteButton}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons
+              name={isStockFavorite ? "star" : "star-outline"}
+              size={20}
+              color={isStockFavorite ? "#FFFFFF" : "#666"}
+              style={styles.favoriteIcon}
+            />
+          </TouchableOpacity>
+        </TouchableOpacity>
+      );
+    },
+    [isFavorite, handleStockPress, formatter, toggleFavorite]
+  );
+
+  // Sort and organize data into sections
+  const sectionData = useMemo(() => {
+    if (!data?.pools) return [];
+
+    // Extract and sort data by category
+    const favoritesData = data.pools
+      .filter((pool) => favorites.includes(pool.baseAsset.id))
+      .sort((a, b) => b.baseAsset.stockData.mcap - a.baseAsset.stockData.mcap);
+
+    const stocksData = data.pools
+      .filter(
+        (pool) =>
+          pool.baseAsset.category === "stock" &&
+          !favorites.includes(pool.baseAsset.id)
+      )
+      .sort((a, b) => b.baseAsset.stockData.mcap - a.baseAsset.stockData.mcap);
+
+    const etfsData = data.pools
+      .filter(
+        (pool) =>
+          pool.baseAsset.category === "etf" &&
+          !favorites.includes(pool.baseAsset.id)
+      )
+      .sort((a, b) => b.baseAsset.stockData.mcap - a.baseAsset.stockData.mcap);
+
+    // Create section list data structure
+    return [
+      { title: "Favorites", data: favoritesData },
+      { title: "Stocks", data: stocksData },
+      { title: "ETFs", data: etfsData },
+    ];
+  }, [data?.pools, favorites]);
+
+  const renderSectionHeader = useCallback(
+    ({ section: { title } }: { section: SectionData }) => (
+      <Text style={styles.sectionHeader}>{title}</Text>
+    ),
+    []
+  );
 
   return (
     <View style={styles.container}>
@@ -152,34 +208,10 @@ export default function DiscoverScreen() {
         </View>
       ) : (
         <SectionList
-          sections={[
-            {
-              title: "Favorites",
-              data: favoritesData.sort(
-                (a, b) =>
-                  b.baseAsset.stockData.mcap - a.baseAsset.stockData.mcap
-              ),
-            },
-            {
-              title: "Stocks",
-              data: stocksData.sort(
-                (a, b) =>
-                  b.baseAsset.stockData.mcap - a.baseAsset.stockData.mcap
-              ),
-            },
-            {
-              title: "ETFs",
-              data: etfsData.sort(
-                (a, b) =>
-                  b.baseAsset.stockData.mcap - a.baseAsset.stockData.mcap
-              ),
-            },
-          ]}
+          sections={sectionData}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => renderStockItem({ item })}
-          renderSectionHeader={({ section: { title } }) => (
-            <Text style={styles.sectionHeader}>{title}</Text>
-          )}
+          renderItem={renderStockItem}
+          renderSectionHeader={renderSectionHeader}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
         />
@@ -188,21 +220,43 @@ export default function DiscoverScreen() {
   );
 }
 
+/**
+ * Discover screen styles
+ */
 const styles = StyleSheet.create({
+  // Layout
   container: {
     flex: 1,
     paddingLeft: 15,
     paddingRight: 15,
     backgroundColor: "black",
   },
+  listContent: {
+    paddingBottom: 20,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  // Typography
   title: {
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 20,
   },
-  listContent: {
-    paddingBottom: 20,
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
   },
+  sectionHeader: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginVertical: 10,
+  },
+
+  // Stock Item
   stockItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -217,9 +271,6 @@ const styles = StyleSheet.create({
   stockInfo: {
     flex: 1,
   },
-  mcapInfo: {
-    minWidth: 40,
-  },
   ticker: {
     fontSize: 16,
     fontWeight: "bold",
@@ -228,6 +279,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     opacity: 0.7,
   },
+
+  // Price and Market Cap
   priceContainer: {
     alignItems: "flex-end",
     marginRight: 30,
@@ -239,26 +292,18 @@ const styles = StyleSheet.create({
   change: {
     fontSize: 14,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+  mcapInfo: {
+    minWidth: 40,
   },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-  },
+
+  // Favorites
   favoriteIcon: {
     marginLeft: 10,
   },
   favoriteButton: {
-    padding: 2,
+    padding: 8,
     justifyContent: "center",
     alignItems: "center",
-  },
-  sectionHeader: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginVertical: 10,
+    borderRadius: 20,
   },
 });
