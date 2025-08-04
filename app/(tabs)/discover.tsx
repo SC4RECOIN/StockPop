@@ -42,25 +42,19 @@ export default function DiscoverScreen() {
   // State for user favorites
   const [favorites, setFavorites] = useState<string[]>([]);
 
-  /**
-   * Load favorites on initial render
-   */
+  // Load favorites on initial render
   useEffect(() => {
     loadFavorites();
   }, []);
 
-  /**
-   * Reload favorites when screen is focused
-   */
+  // Reload favorites when screen is focused
   useFocusEffect(
     useCallback(() => {
       loadFavorites();
     }, [])
   );
 
-  /**
-   * Handle API errors
-   */
+  // Handle API errors
   useEffect(() => {
     if (error) {
       console.error("Error fetching stocks:", error);
@@ -68,9 +62,6 @@ export default function DiscoverScreen() {
     }
   }, [error]);
 
-  /**
-   * Load favorites from storage
-   */
   const loadFavorites = async () => {
     const storedFavorites = await AsyncStorage.getItem("favorites");
     if (storedFavorites) {
@@ -78,9 +69,6 @@ export default function DiscoverScreen() {
     }
   };
 
-  /**
-   * Toggle stock favorite status
-   */
   const toggleFavorite = async (stockId: string) => {
     const updatedFavorites = favorites.includes(stockId)
       ? favorites.filter((id) => id !== stockId)
@@ -90,17 +78,12 @@ export default function DiscoverScreen() {
     await AsyncStorage.setItem("favorites", JSON.stringify(updatedFavorites));
   };
 
-  /**
-   * Check if stock is favorited
-   */
   const isFavorite = useCallback(
     (stockId: string) => favorites.includes(stockId),
     [favorites]
   );
 
-  /**
-   * Format large numbers with abbreviations
-   */
+  // Format large numbers with abbreviations
   const formatter = useMemo(() => {
     return new Intl.NumberFormat("en-US", {
       notation: "compact",
@@ -108,9 +91,6 @@ export default function DiscoverScreen() {
     }).format;
   }, []);
 
-  /**
-   * Handle stock selection
-   */
   const handleStockPress = useCallback(
     (stockId: string) => {
       router.push({
@@ -121,9 +101,6 @@ export default function DiscoverScreen() {
     [router]
   );
 
-  /**
-   * Render individual stock item
-   */
   const renderStockItem = useCallback(
     ({ item }: StockItemProps) => {
       const asset = item.baseAsset;
@@ -182,9 +159,7 @@ export default function DiscoverScreen() {
     [isFavorite, handleStockPress, formatter, toggleFavorite]
   );
 
-  /**
-   * Sort and organize data into sections
-   */
+  // Sort and organize data into sections
   const sectionData = useMemo(() => {
     if (!data?.pools) return [];
 
@@ -217,9 +192,6 @@ export default function DiscoverScreen() {
     ];
   }, [data?.pools, favorites]);
 
-  /**
-   * Render section headers
-   */
   const renderSectionHeader = useCallback(
     ({ section: { title } }: { section: SectionData }) => (
       <Text style={styles.sectionHeader}>{title}</Text>
