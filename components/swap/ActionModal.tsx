@@ -39,7 +39,7 @@ export default function ActionModal({
   const queryClient = useQueryClient();
   const router = useRouter();
   const { pubkey, solBalance, signTransaction } = useWallet();
-  const [signingLoading, setSigningLoading] = useState(false);
+  const [isSigning, setSigningLoading] = useState(false);
 
   const {
     amount,
@@ -52,6 +52,7 @@ export default function ActionModal({
     selectedStock,
     pubkey,
     actionType,
+    isSigning,
   });
 
   // Wallet errors
@@ -60,8 +61,8 @@ export default function ActionModal({
   const buyError = !pubkey
     ? "Connect your wallet"
     : solBelowThreshold
-    ? "Insufficient SOL balance"
-    : "";
+    ? "SOL balance might be too low for fees"
+    : undefined;
 
   // Get balances available for trading
   const { data: balanceData } = useQuery({
@@ -76,7 +77,7 @@ export default function ActionModal({
         ?.balance ?? 0,
       balanceData?.other["EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"] ?? 0,
     ],
-    [balanceData?.other]
+    [balanceData, selectedStock?.id]
   );
 
   const closeModal = () => {
@@ -125,7 +126,9 @@ export default function ActionModal({
       Notifier.showNotification(
         getInfoAlert(
           "Swap Success",
-          `${actionType === "buy" ? "Bought" : "Sold"} ${selectedStock.symbol}`
+          `${actionType === "buy" ? "Bought" : "Sold"} ${amount} ${
+            selectedStock.symbol
+          }`
         )
       );
     } catch (error) {
@@ -204,13 +207,6 @@ export default function ActionModal({
           </TouchableOpacity>
         </RNView>
 
-        {isLoadingQuote && (
-          <RNView style={styles.quoteLoadingContainer}>
-            <ActivityIndicator size="small" color="#FFFFFF" />
-            <Text style={styles.quoteLoadingText}>Getting quote...</Text>
-          </RNView>
-        )}
-
         {quoteError && (
           <RNView style={styles.quoteErrorContainer}>
             <Text style={styles.quoteErrorText}>{quoteError}</Text>
@@ -277,11 +273,9 @@ export default function ActionModal({
           <TouchableOpacity
             style={[styles.actionButton, styles.buyButton]}
             onPress={handleAction}
-            disabled={
-              !amount || isLoadingQuote || !!quoteError || signingLoading
-            }
+            disabled={!amount || isLoadingQuote || !!quoteError || isSigning}
           >
-            {isLoadingQuote || signingLoading ? (
+            {isLoadingQuote || isSigning ? (
               <RNView style={styles.loadingButtonContent}>
                 <ActivityIndicator size="small" color="#000000" />
               </RNView>

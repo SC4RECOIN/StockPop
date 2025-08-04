@@ -5,6 +5,7 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
+  ScrollView,
 } from "react-native";
 import { Text, View } from "@/components/Themed";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
@@ -158,7 +159,10 @@ export default function PortfolioScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+    >
       {/* Positions Section */}
       <Text style={styles.title}>Positions</Text>
       {isLoading ? (
@@ -173,6 +177,8 @@ export default function PortfolioScreen() {
           keyExtractor={(item) => item.id}
           renderItem={(props) => <PositionItem {...props} />}
           contentContainerStyle={styles.listContent}
+          nestedScrollEnabled={true}
+          scrollEnabled={false}
         />
       )}
 
@@ -201,7 +207,7 @@ export default function PortfolioScreen() {
 
       {/* Upcoming Features */}
       {renderUpcomingFeatures()}
-    </View>
+    </ScrollView>
   );
 }
 
@@ -211,8 +217,12 @@ export default function PortfolioScreen() {
 const styles = StyleSheet.create({
   // Layout
   container: {
-    padding: 15,
+    flex: 1,
     backgroundColor: "black",
+  },
+  contentContainer: {
+    padding: 15,
+    paddingBottom: 30,
   },
   loadingContainer: {
     flex: 1,

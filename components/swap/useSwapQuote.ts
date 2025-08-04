@@ -2,7 +2,7 @@ import {
   JupiterUltraOrderResponse,
   JupiterUltraService,
 } from "@/services/tradeService";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useDebounce } from "use-debounce";
 import { PublicKey } from "@solana/web3.js";
 
@@ -10,12 +10,14 @@ interface UseSwapQuoteProps {
   selectedStock: any | null;
   pubkey: PublicKey | null;
   actionType: "buy" | "sell" | null;
+  isSigning: boolean;
 }
 
 export default function useSwapQuote({
   selectedStock,
   pubkey,
   actionType,
+  isSigning,
 }: UseSwapQuoteProps) {
   // Trade amount states with debounce to prevent excessive API calls
   const [amount, setAmount] = useState("");
@@ -34,20 +36,22 @@ export default function useSwapQuote({
   };
 
   const fetchSwapQuote = useCallback(async () => {
+    setQuoteError(null);
+    setSwapQuote(null);
+
     // Validate required data
     if (
       !selectedStock ||
       !pubkey ||
       !debouncedAmount ||
-      parseFloat(debouncedAmount) <= 0
+      parseFloat(debouncedAmount) <= 0 ||
+      isSigning
     ) {
-      setSwapQuote(null);
       return;
     }
 
     try {
       setIsLoadingQuote(true);
-      setQuoteError(null);
 
       const USDC = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
       let [input, output] = [USDC, selectedStock.id];
@@ -91,17 +95,11 @@ export default function useSwapQuote({
     } finally {
       setIsLoadingQuote(false);
     }
-  }, [selectedStock, pubkey, debouncedAmount, actionType]);
+  }, [selectedStock, pubkey, debouncedAmount, actionType, isSigning]);
 
   // Reset quote state and fetch new quote when amount changes
-  const resetAndFetchQuote = useCallback(() => {
-    setQuoteError(null);
-    setSwapQuote(null);
-
-    // Only fetch if we have an amount
-    if (debouncedAmount) {
-      fetchSwapQuote();
-    }
+  useEffect(() => {
+    fetchSwapQuote();
   }, [debouncedAmount, fetchSwapQuote]);
 
   return {
@@ -114,7 +112,6 @@ export default function useSwapQuote({
     setQuoteError,
     setSwapQuote,
     fetchSwapQuote,
-    resetAndFetchQuote,
     resetQuote,
   };
 }
