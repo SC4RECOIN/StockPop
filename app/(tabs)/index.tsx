@@ -59,7 +59,7 @@ export default function PortfolioScreen() {
   const PositionItem = useCallback(
     ({ item }: PositionItemProps) => {
       const asset = item.baseAsset;
-      const priceChange = new Decimal(asset.stats24h.priceChange ?? 0)
+      const priceChange = new Decimal(asset.stats24h?.priceChange ?? 0)
         .div(asset.usdPrice)
         .mul(100);
 

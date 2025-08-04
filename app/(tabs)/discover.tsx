@@ -127,7 +127,7 @@ export default function DiscoverScreen() {
   const renderStockItem = useCallback(
     ({ item }: StockItemProps) => {
       const asset = item.baseAsset;
-      const priceChange = new Decimal(asset.stats24h.priceChange ?? 0)
+      const priceChange = new Decimal(asset.stats24h?.priceChange ?? 0)
         .div(asset.usdPrice)
         .mul(100);
 
