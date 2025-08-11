@@ -20,7 +20,7 @@ import {
   stockSectors,
 } from "./descriptions";
 
-const STOCKS_URL = "https://datapi.jup.ag/v1/pools/xstocks/24h";
+const STOCKS_URL = "https://datapi.jup.ag/v1/pools/stocks/24h";
 const cache = new NodeCache({ stdTTL: 60 });
 
 // cache keys
@@ -266,6 +266,8 @@ async function getStocks(): Promise<StocksResponse> {
   });
 
   cache.set(stocksKey, data);
+
+  console.log("DATA FETCHED:", data.pools.length, "stocks", data);
 
   return data;
 }
